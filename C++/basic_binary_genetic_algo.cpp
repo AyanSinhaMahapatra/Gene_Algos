@@ -3,13 +3,11 @@
 // Fitness Function is defined as Sum of all elements in the string
 // Desired output is A Binary String with all 1's
 // By Ayan Sinha Mahapatra
-
 #include<iostream>
 #include<cmath>
 #include<algorithm>
 #include<ctime>
 using namespace std;
-
 // Global Array Pointers 
 	int *array;
 	int *array_fitness;
@@ -20,50 +18,36 @@ using namespace std;
 	int *pop_array;
 	int *offspring_array;
 	int *offspring_fitness;
-
 // Initializing Global Default Test Parameters 
-	int small_str_len=5;
-	int small_str_no=24;
-	int population_size=4;
+	int small_str_len=20;
+	int small_str_no=240;
+	int population_size=40;
 	int total_length=small_str_no*small_str_len;
 	int pop_length=population_size*small_str_len;
 	float mutation_probablity=0.01;
-	int no_of_generations=50;
+	int no_of_generations=500;
 	char condition='n';
-
 // Randomly Initialize The Input Array
 void random_generate_main_array(int *array_random,int length);
-
 //Print Functions
 void print_array(int *array_to_print,int length);
 void print_array_float(float *array_to_print,int length);
-
 //Calculate Fitness Of a Given Array And Output It to specified destination
 void calculate_fitness(int *arr_source,int *arr_dest,int start_s,int start_d,int no_of_steps);
-
 //Copying One Smallest Unit Of The String
 void small_str_copy(int *arr_dest,int dest_start,int *arr_src,int src_start);
-
 //Offspring Fromation By Crossover From Parents Population
 void crossover_reproduction(int *population,int *offspring);
-
 //Mutation Function
 void perform_muation(int *to_mutate,int length_mutate);
-
 int find_minimum(int *array,int length);
 int find_maximum(int *array,int length);
-
 // Mating Pool Formation Functions 
 void mating_pool_form_roulette(int fitness_sum);
 void mating_pool_form_max();
-
 //Total Fitness Calculation In a Generation
 int calcu_fitness_sum();
-
-//Allocating Memory
 void alloc_memory();
-
-// Non-Default Input Collection
 void take_input();
 
 //Main Function
@@ -92,7 +76,7 @@ int main()
 
 		//Formation of the Mating Pool
 		if(condition =='y')
-		    mating_pool_form_roulette(fitness_sum);
+			mating_pool_form_roulette(fitness_sum);
 		else if(condition =='n')
 			mating_pool_form_max();
 
@@ -118,10 +102,8 @@ int main()
 
 		cout<<"Fitness Sum At Last = "<<calcu_fitness_sum()<<endl;
 	}
-
 	return 0;
 }
-
 void take_input()
 {
 	cout<<"Input Length Of One Gene (Smallest String) "<<endl;
@@ -131,8 +113,6 @@ void take_input()
 	cout<<"Input Population Size"<<endl;
 	cin>>population_size;
 }
-
-// Randomly Initialize The Input Array
 void random_generate_main_array(int *array_random,int length)
 {
 	srand(time(NULL));
@@ -141,8 +121,6 @@ void random_generate_main_array(int *array_random,int length)
 		array_random[i]= rand() % 2;
 	}
 }
-
-//Print Function
 void print_array(int *array_to_print,int length)
 {
 	cout<<"[ ";
@@ -150,7 +128,6 @@ void print_array(int *array_to_print,int length)
 		cout<<array_to_print[i]<<" , ";
 	cout<<" ]"<<endl;
 }
-
 void print_array_float(float *array_to_print,int length)
 {
 	cout<<"[ ";
@@ -158,34 +135,25 @@ void print_array_float(float *array_to_print,int length)
 		cout<<array_to_print[i]<<" , ";
 	cout<<" ]"<<endl;
 }
-
-//Calculate Fitness Of a Given Array And Output It to specified destination
 void calculate_fitness(int *arr_source,int *arr_dest,int start_s,int start_d,int no_of_steps)
 {
 	int start_source_temp = start_s;
 	int start_fitness_temp = start_d;
-
 	for(int i=1;i<=no_of_steps;i++)
 	{
 		int total_fitness = 0;
-
 		for(int j=0;j<small_str_len;j++)
 			total_fitness += arr_source[start_source_temp+j];
-
 		arr_dest[start_fitness_temp] = total_fitness; //Edits
 		start_source_temp += small_str_len;
 		start_fitness_temp ++;
 	}
 }
-
 void small_str_copy(int *arr_dest,int dest_start,int *arr_src,int src_start)
 {
 	for(int i=0;i<small_str_len;i++)
-	{
 		arr_dest[dest_start+i]=arr_src[src_start+i];
-	}
 }
-
 void crossover_reproduction(int *population,int *offspring)
 {
 	srand(time(NULL));
@@ -210,7 +178,6 @@ void crossover_reproduction(int *population,int *offspring)
 		}
 	}
 }
-
 void perform_muation(int *to_mutate,int length_mutate)
 {
 	srand(time(NULL));
@@ -221,7 +188,6 @@ void perform_muation(int *to_mutate,int length_mutate)
 			to_mutate[i]= 1 -to_mutate[i];
 	}
 }
-
 int find_minimum(int *array,int length)
 {
 	int minimum_value=array[1];
@@ -236,7 +202,6 @@ int find_minimum(int *array,int length)
 	}
 	return minimum_index;
 }
-
 int find_maximum(int *array,int length)
 {
 	int maximum_value=array[1];
@@ -251,39 +216,32 @@ int find_maximum(int *array,int length)
 	}
 	return maximum_index;
 }
-
 void mating_pool_form_roulette(int fitness_sum)
 {
 	srand(time(NULL));
 	float temp_counting;
 	//cout<<"Fitness Sum = "<<fitness_sum<<endl;
 	//cout<<"Fitness Array = "<<endl;
-    //		print_array(array_fitness,small_str_no);
-
+	//		print_array(array_fitness,small_str_no);
 	count_calculator[0]=0;
 	for(int i=1;i<=small_str_no;i++)
 	{
 		temp_counting = float(array_fitness[i] * population_size)/fitness_sum;
 		count_calculator[i] = count_calculator[i-1] + temp_counting;
 	}
-
 	//cout<<"Count Calculator = "<<endl;
 	//print_array_float(count_calculator,small_str_no);
-
 	//Roulette Allocation
 	for(int i=1;i<=population_size;i++)
 	{
 		roulette_result[i] = ( rand() / (double)RAND_MAX ) * population_size;
 	}
 	sort(roulette_result,roulette_result+population_size+1);
-
 	//cout<<"Roullette Result = "<<endl;
 	//	print_array_float(roulette_result,population_size);
-
 	int rlt=1;
 	for(int i=1;i<=small_str_no;i++)
 		roulette_count[i]=0;
-
 	for(int i=0;i<=small_str_no;i++)
 	{
 		if((count_calculator[i]<roulette_result[rlt])&&(roulette_result[rlt]<count_calculator[i+1]))
@@ -293,10 +251,8 @@ void mating_pool_form_roulette(int fitness_sum)
 			i--;
 		}
 	}
-
 	//cout<<"Roullette Count = "<<endl;
 	//	print_array(roulette_count,small_str_no);
-
 	//Mating Pool Formation
 	int mating_temp=0;
 	for(int i=1;i<=small_str_no;i++)
@@ -312,7 +268,6 @@ void mating_pool_form_roulette(int fitness_sum)
 			break;
 	}
 }
-
 void mating_pool_form_max()
 {
 	for(int i=1;i<=small_str_no;i++)
@@ -328,17 +283,14 @@ void mating_pool_form_max()
 		pop_index += small_str_len;
 	}	
 }
-
 int calcu_fitness_sum()
 {
 	calculate_fitness(array,array_fitness,1,1,small_str_no);
 	int fitness_sum=0;
 	for(int i=1;i<=small_str_no;i++)
 		fitness_sum+= array_fitness[i];
-
 	return fitness_sum;
 }
-
 void alloc_memory()
 {
 	array = (int*)malloc((total_length+1)*sizeof(int));

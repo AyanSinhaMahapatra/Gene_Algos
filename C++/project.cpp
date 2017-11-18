@@ -10,6 +10,8 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
+void random_generate(Eigen::VectorXd& array);
+int is_okay(Eigen::VectorXd& array);
 
 int main()
 {
@@ -17,12 +19,76 @@ int main()
     Eigen::VectorXd array(116);
 	assign_coeff_mat(coeff_mat);
 	assign_result_arrays(array);
-	cout<<"Cost =="<<cost_full(coeff_mat,array);
+	cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
+	//random_generate(array);
+	//flag=is_okay(array);
+
+
 	return 0;
+}
+
+int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
+{
+	int flag=1,total_ones=0;
+	if(array(1)!=0)
+		flag=0;
+	if(array(115) != 1 - array(94))
+		flag=0;
+	for(int i=2;i<=114;i++)
+	{
+		if(i==94)
+			i++;
+		if(int(array(i))==1)
+			total_ones++;
+	}
+	if(total_ones!=56)
+		flag=0;
+	return flag;
+}
+
+void random_generate(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
+{
+	srand(time(NULL));
+	array.fill(0);
+	int rand_gen=0;
+	for(int i=0;i<56;i++)
+	{
+		rand_gen = rand() % 112;
+		rand_gen +=2;
+		if(rand_gen==94)
+		{
+			do{
+				rand_gen++;
+				if(rand_gen==115)
+					rand_gen=2;
+			}
+			while(array(rand_gen)==1);
+		}
+		while(array(rand_gen)==1)
+		{
+			rand_gen++;
+			if(rand_gen==115)
+				rand_gen=2;
+			if(rand_gen==94)
+				rand_gen++;
+		}
+		if(array(rand_gen)!=1)
+			array(rand_gen)=1;
+		else
+			i--;
+	}
+
+	array(94)= int(rand() % 2);
+	array(115)= 1 - array(94);
 }
 
 int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
 {
+	Eigen::VectorXd array_temp(116);
+	Eigen::VectorXd array_final(116);
+	//array_temp
+	// Eigen : P.block<rows, cols>(i, j) | Matlab : P(i+1 : i+rows, j+1 : j+cols)
+
 	return 0;
 }
 

@@ -9,21 +9,58 @@ using namespace Eigen;
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
+int cost_in_a_range(int start,int end,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
 void random_generate(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
 
 int main()
 {
+	//assign_result_arrays(array);
+	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
+	//
+	//flag=is_okay(array);
+
+//Load Co-efficient Matrix 
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
 	assign_coeff_mat(coeff_mat);
-	assign_result_arrays(array);
-	cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
-	//random_generate(array);
-	//flag=is_okay(array);
 
+	cout<<coeff_mat.rowwise().sum()<<endl;
 
+//Main Loop Starts
+while(0)	
+{
+//               Random Generate Array Following Guidelines
+		random_generate(array);
+
+// Part 1         Randomly Select 2 Parents of Length 10 ( Except 1,115,94 )
+//                Make Crossover Pairs ( 1 from front 1 from Back )
+//
+//                Check Cost Of only That Fraction 
+//
+//              If M
+//                Less, Then Replace ( Does Not Violate Guidelines )
+//                Else   Continue
+//
+//Part 2          Randomly Select 2 Parents of Length 5 ( Except 1,115,94 )
+//                Make Crossover Pairs ( 1 from front 1 from Back )
+//
+//                Check Cost Of only That Fraction 
+//
+//                If 
+//                Less, Then Replace ( Does Not Violate Guidelines )
+//                Else    Continue 
+//
+// Check Part     Check IF Cost Decreased in last 10,000 Iteraations 
+//                If Yes, Continue
+//                If No, {     Check If It is A result ,
+//                    If yes, Print Message AND Print Result to File
+//                    If No , Continue Main Loop ( Generating another Array Randomly ) 
+//                }
+//
+// 
+}  //Main Loop Ends
 	return 0;
 }
 
@@ -77,9 +114,13 @@ void random_generate(Eigen::VectorXd& array) //Generates A Random Array which ob
 		else
 			i--;
 	}
-
 	array(94)= int(rand() % 2);
 	array(115)= 1 - array(94);
+}
+
+int cost_in_a_range(int start,int end,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
+{
+	return 0;
 }
 
 int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
@@ -182,5 +223,5 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat)
     		rows++;
     	}
     }
-    cout<<"Number of Characters == "<<count<<endl;
+    //cout<<"Number of Characters == "<<count<<endl;
 }

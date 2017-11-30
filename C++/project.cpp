@@ -8,14 +8,16 @@ using namespace Eigen;
 
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
-int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
-int cost_in_a_range(int start,int end,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
 void random_generate(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
+int random_number(int start,int end,int length,int order);
+void random_parents(int *parents_index,int p_length);
 
 int main()
 {
+	srand(time(NULL));
+	int flag_test =1;
 	//assign_result_arrays(array);
 	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
 	//
@@ -24,26 +26,38 @@ int main()
 //Load Co-efficient Matrix 
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
+    Eigen::VectorXd array_test(116);
 	assign_coeff_mat(coeff_mat);
-
-	cout<<coeff_mat.rowwise().sum()<<endl;
+	int p1_length=10;
+	int p1_no=2;     //Has to be Even //Constant
+	int p2_length=5;
+	int p2_no=2;     //Has to be Even //Constant 
 
 //Main Loop Starts
-while(0)	
+while(flag_test)	
 {
 //               Random Generate Array Following Guidelines
 		random_generate(array);
+		array_test=array;
 
-// Part 1         Randomly Select 2 Parents of Length 10 ( Except 1,115,94 )
+// Part 1         Randomly Select 2 Parents of Length 10 ( Except 1,115,94 ) (Ring GA)
+		int p1_parents_index[4];
+		int p1_length=10;
+		random_parents(p1_parents_index,p1_length);
+
 //                Make Crossover Pairs ( 1 from front 1 from Back )
 //
 //                Check Cost Of only That Fraction 
 //
-//              If M
+//                If 
 //                Less, Then Replace ( Does Not Violate Guidelines )
 //                Else   Continue
 //
-//Part 2          Randomly Select 2 Parents of Length 5 ( Except 1,115,94 )
+//Part 2          Randomly Select 2 Parents of Length 5 ( Except 1,115,94 ) (Ring GA)
+		int p1_parents_index[4];
+		int p1_length=5;
+		random_parents(p1_parents_index,p1_length);
+
 //                Make Crossover Pairs ( 1 from front 1 from Back )
 //
 //                Check Cost Of only That Fraction 
@@ -60,8 +74,60 @@ while(0)
 //                }
 //
 // 
+		flag_test=0;
 }  //Main Loop Ends
 	return 0;
+}
+
+int random_number(int start,int end,int length,int order)
+{
+	//srand(time(NULL));
+	int rand_no =0;
+	int rand_range =0;
+
+	if(start>end)
+		rand_range = (115-start) + (end-2);
+	else
+		rand_range = end-start;
+	if(order==2)
+		rand_range = rand_range - length ;
+
+	rand_no = rand() % rand_range;
+	rand_no = rand_no + start;	
+
+	if(rand_no==94)
+		rand_no++;
+	if(rand_no>114)
+		rand_no = 1 + rand_no % 114;
+
+	return rand_no;
+}
+
+void random_parents(int *parents_index,int p_length)
+{
+	//Parent 1
+	int p1_start = random_number(2,114,p_length,1);
+	if(p1_start==94)
+		p1_start++;
+	int p1_end = p1_start + p_length - 1;
+	if(p1_end>=94&&p1_start<94)
+		p1_end++;
+	if(p1_end>114)
+		p1_end = p1_end % 114+1;
+	//Parent 2
+	int p2_start = random_number(p1_end+1,p1_start-1,p_length,2);
+	if(p2_start==94)
+		p2_start++;
+	int p2_end = p2_start + p_length - 1;
+	if(p2_end>=94&&p2_start<94)
+		p2_end++;
+	if(p2_end>114)
+		p2_end = p2_end % 114 + 1;
+
+	parents_index[0] = p1_start;
+	parents_index[1] = p1_end;
+	parents_index[2] = p2_start;
+	parents_index[3] = p2_end;
 }
 
 int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
@@ -116,21 +182,6 @@ void random_generate(Eigen::VectorXd& array) //Generates A Random Array which ob
 	}
 	array(94)= int(rand() % 2);
 	array(115)= 1 - array(94);
-}
-
-int cost_in_a_range(int start,int end,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
-{
-	return 0;
-}
-
-int cost_of_one(int index,Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
-{
-	Eigen::VectorXd array_temp(116);
-	Eigen::VectorXd array_final(116);
-	//array_temp
-	// Eigen : P.block<rows, cols>(i, j) | Matlab : P(i+1 : i+rows, j+1 : j+cols)
-
-	return 0;
 }
 
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)

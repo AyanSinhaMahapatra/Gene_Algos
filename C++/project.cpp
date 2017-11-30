@@ -2,10 +2,11 @@
 #include<cmath>
 #include<algorithm>
 #include<ctime>
-#include<Eigen/Dense>
+#include<Eigen/Dense> //Linear Algebra Library
 using namespace std;
-using namespace Eigen;
+using namespace Eigen; 
 
+//Function Declarations
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
@@ -13,14 +14,16 @@ void random_generate(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
 int random_number(int start,int end,int length,int order);
 void random_parents(int *parents_index,int p_length);
+void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
 
 int main()
 {
 	srand(time(NULL));
 	int flag_test =1;
+
+	//Testing Already Found Results
 	//assign_result_arrays(array);
 	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
-	//
 	//flag=is_okay(array);
 
 //Load Co-efficient Matrix 
@@ -40,27 +43,35 @@ while(flag_test)
 		random_generate(array);
 		array_test=array;
 
-// Part 1         Randomly Select 2 Parents of Length 10 ( Except 1,115,94 ) (Ring GA)
+// Part 1         
+//				  Randomly Select 2 Parents of Length 10 ( Except 1,115,94 ) (Ring GA)
 		int p1_parents_index[4];
-		int p1_length=10;
 		random_parents(p1_parents_index,p1_length);
+
+//                Copy To Small Parent Arrays
+		int parent1[p1_length];
+		int parent2[p1_length];
+		copy_parents_from_array(array,parent1,parent2,p1_length,p1_parents_index);
 
 //                Make Crossover Pairs ( 1 from front 1 from Back )
 //
-//                Check Cost Of only That Fraction 
+//				  Copy Offspring Arrays to Test Array
+//
+//                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
 //
 //                If 
-//                Less, Then Replace ( Does Not Violate Guidelines )
+//                Less, Then Replace Array With Test Array ( Does Not Violate Guidelines )
 //                Else   Continue
 //
-//Part 2          Randomly Select 2 Parents of Length 5 ( Except 1,115,94 ) (Ring GA)
-		int p1_parents_index[4];
-		int p1_length=5;
-		random_parents(p1_parents_index,p1_length);
+//Part 2          
+//				  Randomly Select 2 Parents of Length 5 ( Except 1,115,94 ) (Ring GA)
+		int p2_parents_index[4];
+		random_parents(p2_parents_index,p2_length);
+//                Copy To Small Parent Arrays
 
 //                Make Crossover Pairs ( 1 from front 1 from Back )
 //
-//                Check Cost Of only That Fraction 
+//                Check Cost (#ToDo Enhancement - Of only That Fraction)
 //
 //                If 
 //                Less, Then Replace ( Does Not Violate Guidelines )
@@ -77,6 +88,34 @@ while(flag_test)
 		flag_test=0;
 }  //Main Loop Ends
 	return 0;
+}
+
+void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
+{
+	int temp=parents_index[0];
+	int i=0;
+	while(temp<=parents_index[1])
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		parent1[i]=array[temp];
+		temp++;
+		i++;
+	}
+	temp=parents_index[2];
+	i=0;
+	while(temp<=parents_index[3])
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		parent2[i]=array[temp];
+		temp++;
+		i++;
+	}
 }
 
 int random_number(int start,int end,int length,int order)

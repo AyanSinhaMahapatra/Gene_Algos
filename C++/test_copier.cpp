@@ -89,33 +89,118 @@ void random_parents(int *parents_index,int p_length)
 	parents_index[2] = p2_start;
 	parents_index[3] = p2_end;
 }
-void copy_parents(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
+void double_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length)
+{
+	int rand_boundary = length/2 ;
+	//Left To Right
+	int rand_var = rand() % rand_boundary;
+	rand_var = rand_var + length/2 - 2 ;
+	cout<<"Crossover at - "<<rand_var<<endl;
+	int temp = 0;
+	while(temp<=rand_var)
+	{
+		offspring1[temp]=parent1[temp];
+		offspring2[temp]=parent2[temp];
+		temp++;
+	}
+	while(temp<=length)
+	{
+		offspring2[temp]=parent1[temp];
+		offspring1[temp]=parent2[temp];
+		temp++;
+	}
+	//Right To Left
+	rand_var = rand() % rand_boundary;
+	rand_var = length - length/2 - rand_var ;
+	cout<<"Crossover at - "<<rand_var<<endl;
+	temp = length-1;
+	while(temp>rand_var)
+	{
+		offspring1[temp]=parent1[temp];
+		offspring2[temp]=parent2[temp];
+		temp++;
+	}
+	while(temp>=1)
+	{
+		offspring2[temp]=parent1[temp];
+		offspring1[temp]=parent2[temp];
+		temp++;
+	}
+}
+void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length)
+{
+	int rand_boundary = length-2 ;
+	//Left To Right
+	int rand_var = rand() % rand_boundary;
+	rand_var+=2;
+	cout<<"Crossover at - "<<rand_var<<endl;
+	int temp = 0;
+	while(temp<rand_var)
+	{
+		offspring1[temp]=parent1[temp];
+		offspring2[temp]=parent2[temp];
+		temp++;
+	}
+	while(temp<=length)
+	{
+		offspring2[temp]=parent1[temp];
+		offspring1[temp]=parent2[temp];
+		temp++;
+	}
+}
+void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
 {
 	int temp=parents_index[0];
 	int i=0;
-	while(temp<=parents_index[1])
+	while(temp!=parents_index[1]+1)
 	{
 		if(temp==94)
 			temp++;
 		if(temp==115)
 			temp=2;
-		parent1[i]=array[temp];
+		parent1[i]=array(temp);
 		temp++;
 		i++;
 	}
 	temp=parents_index[2];
 	i=0;
-	while(temp<=parents_index[3])
+	while(temp!=parents_index[3]+1)
 	{
 		if(temp==94)
 			temp++;
 		if(temp==115)
 			temp=2;
-		parent2[i]=array[temp];
+		parent2[i]=array(temp);
 		temp++;
 		i++;
 	}
-	cout<<"Copied"<<endl;
+}
+void copy_parents_to_array(Eigen::VectorXd& array,int *offspring1,int *offspring2,int length,int *parents_index)
+{
+	int temp=parents_index[0];
+	int i=0;
+	while(temp!=(parents_index[1]+1))
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		array(temp)=offspring1[i];
+		temp++;
+		i++;
+	}
+	temp=parents_index[2];
+	i=0;
+	while(temp!=(parents_index[3]+1))
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		array(temp)=offspring2[i];
+		temp++;
+		i++;
+	}
 }
 int main()
 {
@@ -133,12 +218,26 @@ int main()
 	
 	int parent1[p1_length];
 	int parent2[p1_length];
-	copy_parents(array,parent1,parent2,p1_length,p1_parents_index);
+	copy_parents_from_array(array,parent1,parent2,p1_length,p1_parents_index);
 
 	cout<<"1st Parent - 2nd Parent"<<endl;
 	for(int i=0;i<p1_length;i++)
 	{
 		cout<<parent1[i]<<" - "<<parent2[i]<<endl;
 	}
+
+	int offspring1[p1_length];
+	int offspring2[p1_length];
+	simple_crossover_reproduction(parent1,parent2,offspring1,offspring2,p1_length);
+
+	cout<<"1st offspring - 2nd offspring"<<endl;
+	for(int i=0;i<p1_length;i++)
+	{
+		cout<<offspring1[i]<<" - "<<offspring2[i]<<endl;
+	}
+
+    copy_parents_to_array(array,offspring1,offspring2,p1_length,p1_parents_index);
+    cout<<array<<endl;
+
 	return 0;
 }

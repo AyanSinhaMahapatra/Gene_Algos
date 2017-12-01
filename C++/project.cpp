@@ -14,7 +14,9 @@ void random_generate(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
 int random_number(int start,int end,int length,int order);
 void random_parents(int *parents_index,int p_length);
-void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
+void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length);
+void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index);
+void copy_parents_to_array(Eigen::VectorXd& array,int *offspring1,int *offspring2,int length,int *parents_index);
 
 int main()
 {
@@ -26,7 +28,7 @@ int main()
 	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
 	//flag=is_okay(array);
 
-//Load Co-efficient Matrix 
+	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_test(116);
@@ -35,84 +37,147 @@ int main()
 	int p1_no=2;     //Has to be Even //Constant
 	int p2_length=5;
 	int p2_no=2;     //Has to be Even //Constant 
+	int cost_prev=0,cost_after=0;
 
 //Main Loop Starts
 while(flag_test)	
 {
 //               Random Generate Array Following Guidelines
-		random_generate(array);
-		array_test=array;
+	random_generate(array);
+	array_test=array;
 
+	{
 // Part 1         
 //				  Randomly Select 2 Parents of Length 10 ( Except 1,115,94 ) (Ring GA)
 		int p1_parents_index[4];
 		random_parents(p1_parents_index,p1_length);
-
 //                Copy To Small Parent Arrays
 		int parent1[p1_length];
 		int parent2[p1_length];
 		copy_parents_from_array(array,parent1,parent2,p1_length,p1_parents_index);
-
 //                Make Crossover Pairs ( 1 from front 1 from Back )
-//
+		int offspring1[p1_length];
+		int offspring2[p1_length];
+		simple_crossover_reproduction(parent1,parent2,offspring1,offspring2);
 //				  Copy Offspring Arrays to Test Array
-//
+		copy_parents_to_array(array_test,parent1,parent2,p1_length,p1_parents_index);
+// 				  Mutation Step (Brute Force Checking)
 //                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
-//
-//                If 
-//                Less, Then Replace Array With Test Array ( Does Not Violate Guidelines )
-//                Else   Continue
-//
+		cost_prev=cost_full(coeff_mat,array);
+		cost_after=cost_full(coeff_mat,array_test);
+		if(cost_after<cost_prev)
+		{
+			if(is_okay(array_test))
+				array=array_test;
+		}
 //Part 2          
 //				  Randomly Select 2 Parents of Length 5 ( Except 1,115,94 ) (Ring GA)
 		int p2_parents_index[4];
 		random_parents(p2_parents_index,p2_length);
 //                Copy To Small Parent Arrays
-
+		int parent1[p2_length];
+		int parent2[p2_length];
+		copy_parents_from_array(array,parent1,parent2,p2_length,p2_parents_index);
 //                Make Crossover Pairs ( 1 from front 1 from Back )
-//
+		int offspring1[p2_length];
+		int offspring2[p2_length];
+		simple_crossover_reproduction(parent1,parent2,offspring1,offspring2);
+//				  Copy Offspring Arrays to Test Array
+		copy_parents_to_array(array_test,parent1,parent2,p1_length,p1_parents_index);
+// 				  Mutation Step (Brute Force Checking)
 //                Check Cost (#ToDo Enhancement - Of only That Fraction)
-//
-//                If 
-//                Less, Then Replace ( Does Not Violate Guidelines )
-//                Else    Continue 
-//
+		cost_prev=cost_full(coeff_mat,array);
+		cost_after=cost_full(coeff_mat,array_test);
+		if(cost_after<cost_prev)
+		{
+			if(is_okay(array_test))
+				array=array_test;
+		}
 // Check Part     Check IF Cost Decreased in last 10,000 Iteraations 
 //                If Yes, Continue
 //                If No, {     Check If It is A result ,
 //                    If yes, Print Message AND Print Result to File
 //                    If No , Continue Main Loop ( Generating another Array Randomly ) 
-//                }
+	}
 //
 // 
-		flag_test=0;
+	flag_test=0;
 }  //Main Loop Ends
 	return 0;
+}
+
+void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length)
+{
+	int rand_boundary = length-2 ;
+	//Left To Right
+	int rand_var = rand() % rand_boundary;
+	rand_var+=2;
+	cout<<"Crossover at - "<<rand_var<<endl;
+	int temp = 0;
+	while(temp<=rand_var)
+	{
+		offspring1[temp]=parent1[temp];
+		offspring2[temp]=parent2[temp];
+		temp++;
+	}
+	while(temp<=length)
+	{
+		offspring2[temp]=parent1[temp];
+		offspring1[temp]=parent2[temp];
+		temp++;
+	}
 }
 
 void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index)
 {
 	int temp=parents_index[0];
 	int i=0;
-	while(temp<=parents_index[1])
+	while(temp!=parents_index[1]+1)
 	{
 		if(temp==94)
 			temp++;
 		if(temp==115)
 			temp=2;
-		parent1[i]=array[temp];
+		parent1[i]=array(temp);
 		temp++;
 		i++;
 	}
 	temp=parents_index[2];
 	i=0;
-	while(temp<=parents_index[3])
+	while(temp!=parents_index[3]+1)
 	{
 		if(temp==94)
 			temp++;
 		if(temp==115)
 			temp=2;
-		parent2[i]=array[temp];
+		parent2[i]=array(temp);
+		temp++;
+		i++;
+	}
+}
+void copy_parents_to_array(Eigen::VectorXd& array,int *offspring1,int *offspring2,int length,int *parents_index)
+{
+	int temp=parents_index[0];
+	int i=0;
+	while(temp!=(parents_index[1]+1))
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		array(temp)=offspring1[i];
+		temp++;
+		i++;
+	}
+	temp=parents_index[2];
+	i=0;
+	while(temp!=(parents_index[3]+1))
+	{
+		if(temp==94)
+			temp++;
+		if(temp==115)
+			temp=2;
+		array(temp)=offspring2[i];
 		temp++;
 		i++;
 	}

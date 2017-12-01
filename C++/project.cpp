@@ -17,11 +17,20 @@ void random_parents(int *parents_index,int p_length);
 void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length);
 void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index);
 void copy_parents_to_array(Eigen::VectorXd& array,int *offspring1,int *offspring2,int length,int *parents_index);
+void print_result_new(Eigen::VectorXd& array)
+{
+	FILE* fp_rslt;
+	fp_rslt=fopen("results_found_by_me.txt","a")
+	// Printing Here
+}
 
 int main()
 {
 	srand(time(NULL));
-	int flag_test =1;
+	int flag_test_1 =1;
+	int flag_test_2 =1;
+	int result_flag=0;
+	int count_2=0;
 
 	//Testing Already Found Results
 	//assign_result_arrays(array);
@@ -40,14 +49,18 @@ int main()
 	int cost_prev=0,cost_after=0;
 
 //Main Loop Starts
-while(flag_test)	
+while(flag_test_1)	
 {
 //               Random Generate Array Following Guidelines
 	random_generate(array);
 	array_test=array;
-
+	count_2=0;
+	flag_test_2=1;
+	int last_10_th_cost=cost_full(coeff_mat,array);
+	while(flag_test_2)
 	{
 // Part 1         
+		count_2++;
 //				  Randomly Select 2 Parents of Length 10 ( Except 1,115,94 ) (Ring GA)
 		int p1_parents_index[4];
 		random_parents(p1_parents_index,p1_length);
@@ -94,14 +107,31 @@ while(flag_test)
 				array=array_test;
 		}
 // Check Part     Check IF Cost Decreased in last 10,000 Iteraations 
+		if((count_2%10000)==0)
+		{
+			if(last_10_th_cost==cost_after){
+				if(cost_after==0)
+				{
+					cout<<"--------------------------------One Result Found-------------------------------"<<endl;
+					print_result_new(array);
+					flag_test_2=0;
+					result_flag=1;
+				}
+				else{
+					cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
+					cout<<"Cost = "<<cost_after<<endl;
+					flag_test_2=0;
+				}
+			}
+		}
 //                If Yes, Continue
 //                If No, {     Check If It is A result ,
 //                    If yes, Print Message AND Print Result to File
 //                    If No , Continue Main Loop ( Generating another Array Randomly ) 
 	}
 //
-// 
-	flag_test=0;
+    if(result_flag)
+		flag_test_1=0;
 }  //Main Loop Ends
 	return 0;
 }

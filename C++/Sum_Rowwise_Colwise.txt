@@ -16,3 +16,12 @@ Coulmnwise Sum (23 on each Row in this Representation) (0th   - 9
    129 129 135 135 135 129 135 135 135 129 129 129 135 129 135 129 135 129 135 135 129 135 129 
    129 141 129 129 129 129 135 129 129 129 129 135 135 129 129 129 135 129 129 129 135 129 129 
    129  21 135 129 129 129 129 129 129 129 141 141 129 135 129 129 129 135 129 129 149 149 21
+
+
+First Swapping Details :)
+
+Average Cost On First Swap == 28
+Total Cost On First Swap == 178618
+Swaps Performed == 6272
+Highest First Swap Cost == 66
+Lowest First Swap Cost == 6

@@ -27,15 +27,11 @@ void print_result_new(Eigen::VectorXd& array)
 int main()
 {
 	srand(time(NULL));
+	int genetic_till=100000;
 	int flag_test_1 =1;
 	int flag_test_2 =1;
 	int result_flag=0;
 	int count_2=0;
-
-	//Testing Already Found Results
-	//assign_result_arrays(array);
-	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
-	//flag=is_okay(array);
 
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
@@ -48,6 +44,11 @@ int main()
 	int p2_no=2;     //Has to be Even //Constant 
 	int cost_prev=0,cost_after=0;
 
+	//Testing Already Found Results
+	//assign_result_arrays(array);
+	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
+	//flag=is_okay(array);
+
 //Main Loop Starts
 while(flag_test_1) //Remove these Comments In Production	
 {
@@ -56,7 +57,7 @@ while(flag_test_1) //Remove these Comments In Production
 	array_test=array;
 	count_2=0;
 	flag_test_2=1;
-	int last_10_th_cost=cost_full(coeff_mat,array);
+	int lowest_cost=cost_full(coeff_mat,array);
 	while(flag_test_2)
 	{
 // Part 1         
@@ -79,7 +80,7 @@ while(flag_test_1) //Remove these Comments In Production
 //                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
 		cost_prev=cost_full(coeff_mat,array);
 		cost_after=cost_full(coeff_mat,array_test);
-		if(cost_after<cost_prev)
+		if(cost_after<=cost_prev)
 		{
 			if(is_okay(array_test))
 				array=array_test;
@@ -111,7 +112,7 @@ while(flag_test_1) //Remove these Comments In Production
 		cost_prev=cost_full(coeff_mat,array);
 		cost_after=cost_full(coeff_mat,array_test);
 		
-		if(cost_after<cost_prev)
+		if(cost_after<=cost_prev)
 		{
 			if(is_okay(array_test))
 				array=array_test;
@@ -123,14 +124,20 @@ while(flag_test_1) //Remove these Comments In Production
 		}
 		else{
 			array_test=array;
+			cost_after=cost_prev;
 		}
-		cout<<"Cost at Iteration "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
-		if(count_2==20)
-			return 0;
-// Check Part     Check IF Cost Decreased in last 10,000 Iteraations 
-		if((count_2%10000)==0)
+
+		//Print Into Screen If Update In Cost Or At Certain Values of Generations
+		if((cost_after<lowest_cost)||((count_2%(genetic_till/10))==0))
 		{
-			if(last_10_th_cost==cost_after){
+			cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
+			lowest_cost=cost_after;
+		}
+
+// Check Part     Check IF Cost Decreased in last 10,000 Iteraations 
+		if((count_2%genetic_till)==0)
+		{
+			if(lowest_cost==cost_after){
 				if(cost_after==0)
 				{
 					cout<<"--------------------------------One Result Found-------------------------------"<<endl;
@@ -138,10 +145,11 @@ while(flag_test_1) //Remove these Comments In Production
 					cout<<endl<<array<<endl;
 					flag_test_2=0;
 					result_flag=1;
+					return 0;
 				}
 				else{
 					cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
-					cout<<"Cost = "<<cost_after<<endl;
+					cout<<"Cost = "<<cost_after<<endl<<endl<<"-New Random Run-"<<endl;
 					flag_test_2=0;
 				}
 			}

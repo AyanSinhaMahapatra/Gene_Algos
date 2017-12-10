@@ -65,7 +65,6 @@ int main()
 					cout<<"Problem Here at "<<i<<"--"<<j<<endl;
 					array=array_test;
 				}
-
 			}
 		}
 	}

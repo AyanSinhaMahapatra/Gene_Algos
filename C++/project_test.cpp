@@ -17,8 +17,25 @@ void random_parents(int *parents_index,int p_length);
 void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length);
 void copy_parents_from_array(Eigen::VectorXd& array,int *parent1,int *parent2,int length,int *parents_index);
 void copy_offsprings_to_array(Eigen::VectorXd& array,int *offspring1,int *offspring2,int length,int *parents_index);
-void print_result_new(Eigen::VectorXd& array);
-int perform_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test);
+void print_result_new(Eigen::VectorXd& array)
+{
+	FILE* fp_rslt;
+	fp_rslt=fopen("results_found_by_me.txt","a");
+	int temp;
+	cout<<endl;
+	for(int i=0;i<116;i++)
+	{
+		temp=array(i);
+		fprintf(fp_rslt,"%d",temp);
+	}
+	cout<<endl;
+	fprintf(fp_rslt,"\n");
+}
+
+int perform_swap()
+{
+	cout<<"Swapped"<<endl;
+}
 
 int main()
 {
@@ -29,7 +46,6 @@ int main()
 	int flag_test_2 =1;
 	int result_flag=0;
 	int count_2=0;
-	int flag_swap=1;
 
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
@@ -46,12 +62,11 @@ int main()
 	//assign_result_arrays(array);
 	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
 	//flag=is_okay(array);
-	 
+	cout<<endl<<"-New Random Run-"<<endl; 
 //Main Loop Starts
 while(flag_test_1) //Remove these Comments In Production	
 {
 //               Random Generate Array Following Guidelines
-	cout<<endl<<"-New Random Run-"<<endl;
 	random_generate(array);
 	array_test=array;
 	count_2=0;
@@ -151,19 +166,14 @@ while(flag_test_1) //Remove these Comments In Production
 					cout<<"Cost = "<<cost_after<<endl<<endl;
 
 					// Swapper Stuff Goes Here
-					cout<<" Swapper Mode Enabled "<<endl;
-					flag_swap=1;
-					while((cost_after!=0)&&(flag_swap!=0))
+					cout<<"Swapper Mode Enabled"<<endl;
+					//while(cost_after!=0)
 					{
 						swapper_gen=1;
-						if(perform_swap(array,array_test))
-						{
-							cout<<" Swap Not Reducing Cost -- ERROR ERROR"<<endl;
-							flag_swap=0;
-						}
+						perform_swap();
 						cost_after=cost_full(coeff_mat,array);
-						cout<<"After Peforming "<<swapper_gen<<" of Batches of Swap, Cost is  -  "<<cost_after<<endl;
-						if(cost_after==0)
+						cout<<"After Peforming "<<swapper_gen<<" of Batches of Swap, Cost is == "<<cost_after<<endl;
+						//if(cost_after==0)
 						{
 							cout<<"------------O Cost Achieved-------------"<<endl;
 							print_result_new(array); //Print To File 
@@ -185,81 +195,6 @@ while(flag_test_1) //Remove these Comments In Production
 		flag_test_1=0;
 }  //Main Loop Ends
 	return 0;
-}
-
-int perform_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test)
-{
-	Eigen::MatrixXd coeff_mat_in_swap(116,116);
-	assign_coeff_mat(coeff_mat_in_swap);
-	int cost_before=0;
-	int cost_afterr=0;
-	int temp = 0;
-	int first_cost=cost_full(coeff_mat_in_swap,array);
-	array_test=array;
-	//Loops
-	for(int i=2;i<115;i++)
-	{
-		if(i==94)
-			i++;
-		//cout<<"I == "<<i<<endl;
-		for(int j=2;j<115;j++)
-		{
-			if(j==94)
-				j++;
-
-			if(array(i)!=array(j))
-			{
-				//swaps_performed++;
-				cost_before = cost_full(coeff_mat_in_swap,array);
-				//cout<<"Cost Before == "<<cost_full(coeff_mat,array)<<endl;
-				//Swap I and J 
-				temp = array(i);
-				array(i)=array(j);
-				array(j)=temp;
-				//cout<<"Cost After == "<<cost_full(coeff_mat,array)<<endl;
-				//Compute Cost
-				cost_afterr = cost_full(coeff_mat_in_swap,array);
-				/*cost_sum+=cost;
-				if(cost<cost_lowest)
-					cost_lowest=cost;
-				if(cost>cost_highest)
-					cost_highest=cost;*/
-
-				//Reswap
-				if(cost_afterr>cost_before)
-				{
-					temp = array(i);
-					array(i)=array(j);
-					array(j)=temp;
-					cost_afterr=cost_before;
-				}
-				//else
-					//cout<<endl<<" 1 Swapping Effective "<<endl;
-			}
-		}
-	}
-
-	//cout<<"Swapped"<<endl;
-	if(cost_afterr == first_cost)
-		return 1;  // This Has to Be Swap Not Reducing Cost 
-	else 
-		return 0;
-}
-
-void print_result_new(Eigen::VectorXd& array)
-{
-	FILE* fp_rslt;
-	fp_rslt=fopen("results_found_by_me.txt","a");
-	int temp;
-	cout<<endl;
-	for(int i=0;i<116;i++)
-	{
-		cout<<temp;
-		temp=array(i);
-		fprintf(fp_rslt,"%d",temp);
-	}
-	cout<<endl;
-	fprintf(fp_rslt,"\n");
 }
 
 void simple_crossover_reproduction(int *parent1,int *parent2,int *offspring1,int *offspring2,int length)

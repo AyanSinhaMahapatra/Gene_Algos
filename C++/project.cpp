@@ -6,7 +6,7 @@
 using namespace std;
 using namespace Eigen; 
 
-	int genetic_till=10000;
+	int genetic_till=10000; 
 	int swapper_gen=0;
 	int flag_test_1 =1;
 	int flag_test_2 =1;
@@ -16,7 +16,7 @@ using namespace Eigen;
 	int lowest_cost_whole=100;
 	int random_run_no=1;
 	float changes_total=0;
-	int mutation_probablity=0.2;
+	float mutation_probablity=0.0001; 
 	float mutation_total=0;
 	int p1_length=20;
 	int p1_no=2;     //Has to be Even //Constant
@@ -39,74 +39,34 @@ void copy_offsprings_to_array(Eigen::VectorXd& array,int *offspring1,int *offspr
 void print_result_new(Eigen::VectorXd& array);
 int perform_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test);
 int change_in_array(Eigen::VectorXd& array,Eigen::VectorXd& array_test);
+void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat);
+void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat);
 int mutate_array(Eigen::VectorXd& array,float mutation_probablity,Eigen::MatrixXd& coeff_mat)
 {
 	//srand(time(NULL));
 	double p = rand() / (double)RAND_MAX;
-	//cout<<p<<endl;
+	//cout<<" P = "<<p<<endl;
 	int temp_mut=0;
 	int mut_1 = random_number(2,114,0,1);
 	int mut_2 = random_number(2,114,0,1);
-	int cost_before = cost_full(coeff_mat,array);
-	if (p < mutation_probablity)  //Swap If Less than Mut_prob
+	int cost_before_mutation = cost_full(coeff_mat,array);
+	int cost_after_mutation = 0;
+	if(p < mutation_probablity)  //Swap If Less than Mut_prob
 	{
 		temp_mut = array(mut_1);
 		array(mut_1) = array(mut_2);
 		array(mut_2) = temp_mut;
 		//cout<<"In Here"<<endl;
 	}	
-	return (cost_full(coeff_mat,array)-cost_before);
-}
-void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat) //array,test_array
-{
-		int p_parents_index[4];
-		random_parents(p_parents_index,p_length);
-		array_test=array;
-//                Copy To Small Parent Arrays
-		int p_parent1[p_length];
-		int p_parent2[p_length];
-		copy_parents_from_array(array,p_parent1,p_parent2,p_length,p_parents_index);
-//                Make Crossover Pairs ( 1 from front 1 from Back )
-		int p_offspring1[p_length];
-		int p_offspring2[p_length];
-		simple_crossover_reproduction(p_parent1,p_parent2,p_offspring1,p_offspring2,p_length);
-//				  Copy Offspring Arrays to Test Array
-		copy_offsprings_to_array(array_test,p_offspring1,p_offspring2,p_length,p_parents_index);
-// 				  Mutation Step (Brute Force Checking)
-//                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
-		cost_prev=cost_full(coeff_mat,array);
-		cost_after=cost_full(coeff_mat,array_test);
-		changes_total+=change_in_array(array,array_test);
-
-		if(cost_after<=cost_prev)
-		{
-			if(is_okay(array_test))
-				array=array_test;
-			else{
-				cout<<"Problem In Array : Fatal Error"<<endl;
-				return;
-			}
-			//cout<<"Less Cost"<<endl;
-		}
-		else{
-			array_test=array;
-			cost_after=cost_prev;
-		}
-
-		mutation_total+=mutate_array(array,mutation_probablity,coeff_mat);
-		array_test=array;
-		cost_after = cost_full(coeff_mat,array_test);
-		if(lowest_cost != cost_after)
-		{
-			//cout<<"Cost at Generation (after Mutation)"<<count_2<<" = "<<cost_after<<endl;
-			//lowest_cost = cost_after;
-		}
+	cost_after_mutation = cost_full(coeff_mat,array);
+	if(cost_after_mutation-cost_before_mutation!=0)
+		cout<<" Mutation happened, Cost =  "<<cost_after_mutation<<endl;
+	return (cost_after_mutation-cost_before_mutation);
 }
 
 int main()
 {
 	srand(time(NULL));
-
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
@@ -147,8 +107,65 @@ while(flag_test_1) //Remove these Comments In Production
 
 // Check Part     Check IF Cost Decreased in last batch of Iterations/Generations 
 		if((count_2%genetic_till)==0)
+			check_and_swap(array,array_test,coeff_mat);
+	}
+//
+    if(result_flag)
+		flag_test_1=0;
+}  //Main Loop Ends
+	return 0;
+}
+
+void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat) //array,test_array
+{
+		int p_parents_index[4];
+		random_parents(p_parents_index,p_length);
+		array_test=array;
+//                Copy To Small Parent Arrays
+		int p_parent1[p_length];
+		int p_parent2[p_length];
+		copy_parents_from_array(array,p_parent1,p_parent2,p_length,p_parents_index);
+//                Make Crossover Pairs ( 1 from front 1 from Back )
+		int p_offspring1[p_length];
+		int p_offspring2[p_length];
+		simple_crossover_reproduction(p_parent1,p_parent2,p_offspring1,p_offspring2,p_length);
+//				  Copy Offspring Arrays to Test Array
+		copy_offsprings_to_array(array_test,p_offspring1,p_offspring2,p_length,p_parents_index);
+// 				  Mutation Step (Brute Force Checking)
+//                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
+		cost_prev=cost_full(coeff_mat,array);
+		cost_after=cost_full(coeff_mat,array_test);
+		changes_total+=change_in_array(array,array_test);
+
+		if(cost_after<=cost_prev)
 		{
-			if(lowest_cost==cost_after){
+			if(is_okay(array_test))
+				array=array_test;
+			else{
+				cout<<"Problem In Array : Fatal Error"<<endl;
+				return;
+			}
+			//cout<<"Less Cost"<<endl;
+		}
+		else{
+			array_test=array;
+			cost_after=cost_prev;
+		}
+
+		mutation_total+=mutate_array(array,mutation_probablity,coeff_mat);
+		//cout<<" Mutation Total = "<<mutation_total<<endl;
+		array_test=array;
+		cost_after = cost_full(coeff_mat,array_test);
+		if(lowest_cost != cost_after)
+		{
+			//cout<<"Cost at Generation (after Mutation)"<<count_2<<" = "<<cost_after<<endl;
+			//lowest_cost = cost_after;
+		}
+}
+
+void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat)
+{
+	if(lowest_cost==cost_after){
 				if(cost_after==0)
 				{
 					cout<<"--------------------------------One Result Found-------------------------------"<<endl;
@@ -156,7 +173,7 @@ while(flag_test_1) //Remove these Comments In Production
 					cout<<endl<<array<<endl;
 					flag_test_2=0;
 					result_flag=1;
-					return 0;
+					return;
 				}
 				else{
 					//cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
@@ -188,24 +205,10 @@ while(flag_test_1) //Remove these Comments In Production
 							print_result_new(array); //Print To File 
 						}
 					}
-
-
 					flag_test_2=0;
 				}
 			}
-		}
-//                If Yes, Continue
-//                If No, {     Check If It is A result ,
-//                    If yes, Print Message AND Print Result to File
-//                    If No , Continue Main Loop ( Generating another Array Randomly ) 
-	}
-//
-    if(result_flag)
-		flag_test_1=0;
-}  //Main Loop Ends
-	return 0;
 }
-
 int change_in_array(Eigen::VectorXd& array,Eigen::VectorXd& array_test)
 {
 	int changes=0;

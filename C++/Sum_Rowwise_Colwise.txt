@@ -9,7 +9,7 @@ Rowwise Sum (All Are 129)
 Coulmnwise Sum (23 on each Row in this Representation) (0th   - 9 
 														94th  - 21
 														115th - 21
-														Else, - 129, 135, 141, 155)
+														Else, - (129 - 77) , (135 - 24) , (141 - 5) , (149 - 4) , (155 - 2) )
 
      9 135 129 129 129 135 129 135 129 129 129 135 141 129 129 129 141 155 129 129 129 129 155 
    129 129 129 129 129 129 129 129 129 129 129 129 129 149 149 129 129 129 129 129 129 129 129 
@@ -18,10 +18,34 @@ Coulmnwise Sum (23 on each Row in this Representation) (0th   - 9
    129  21 135 129 129 129 129 129 129 129 141 141 129 135 129 129 129 135 129 129 149 149 21
 
 
-First Swapping Details :)
+First Swapping Details on Result 1 :) 
 
 Average Cost On First Swap == 28
 Total Cost On First Swap == 178618
 Swaps Performed == 6272
 Highest First Swap Cost == 66
 Lowest First Swap Cost == 6
+
+First Swapping Details on Result 2 :) 
+
+Average Cost On First Swap == 29
+Total Cost On First Swap == 187412
+Swaps Performed == 6272
+Highest First Swap Cost == 63
+Lowest First Swap Cost == 3
+
+First Swapping Details on Result 3 :) 
+
+Average Cost On First Swap == 26
+Total Cost On First Swap == 164284
+Swaps Performed == 6272
+Highest First Swap Cost == 59
+Lowest First Swap Cost == 1
+
+First Swapping Details on Result 4 :) 
+
+Average Cost On First Swap == 27
+Total Cost On First Swap == 169636
+Swaps Performed == 6272
+Highest First Swap Cost == 62
+Lowest First Swap Cost == 5

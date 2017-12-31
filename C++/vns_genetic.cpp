@@ -14,7 +14,7 @@ using namespace Eigen;
 	int count_2=0;
 	int flag_swap=1;
 	int lowest_cost_whole=100;
-	//int random_run_no=1;
+	int random_run_no=1;
 	//float changes_total=0;
 	float mutation_probablity=0.0001; 
 	float mutation_total=0;
@@ -45,10 +45,56 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 int mutate_array(Eigen::VectorXd& array,float mutation_probablity,Eigen::MatrixXd& coeff_mat);
 int check_array(int rand_gen,int *array_random,int size);
 void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+void print_vns(int flag_random,int flag_neigh,int flag_tren,int flag_shake,int random_run_no,int neighbourhood_no,int trench_no,
+	int shake_no,int cost_trench,int cost_shake)
+{
+	FILE *fp_log;
+	fp_log = fopen("vns_log.txt","a"); 
+	if(flag_random==1)
+	{
+		cout<<"***********************************************************************************"<<endl;
+		cout<<"***********************************************************************************"<<endl;
+		cout<<"***********************************************************************************"<<endl;
+		cout<<"                              Random Run Number == "<<random_run_no<<endl;
+		cout<<"Initial Cost Of Randomly Generated Array = "<<cost_shake<<endl;
+		fprintf(fp_log,"                              Random Run Number == %d \n",random_run_no);
+	}
+	if(flag_neigh==1)
+	{
+		cout<<"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
+		cout<<"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
+		cout<<"                   Neighbourhood Number == "<<neighbourhood_no<<endl;
+		fprintf(fp_log,"                   Neighbourhood Number == %d \n",neighbourhood_no);
+	}
+	if(flag_tren==1)
+	{
+		cout<<"=================================================="<<endl;
+		cout<<"        Trench Number =="<<trench_no<<"  Cost = "<<cost_trench<<endl;
+		fprintf(fp_log,"        Trench Number == %d  Cost = %d \n",trench_no,cost_trench);
+	}
+	if(flag_shake==1)
+	{
+		
+		cout<<"Shake Number ::::::::: "<<shake_no<<"   Cost = "<<cost_shake<<endl;
+		fprintf(fp_log,"Shake Number ::::::::: %d  Cost = %d \n",shake_no,cost_shake);
+		if(cost_shake<=cost_trench)
+		{
+			cout<<"<<<<<<<<<<<<<<<<<<<<Lower Cost Found.>>>>>>>>>>>>>>>>>>>>>"<<endl<<" Cost == "<<cost_shake<<endl;
+			fprintf(fp_log,"<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == %d \n",cost_shake);
+		}
+	}
+	if((flag_random==0)&&(flag_neigh==0)&&(flag_tren==0)&&(flag_shake==0))
+	{
+		cout<<"--------------------------------One Result Found-------------------------------"<<endl;
+		fprintf(fp_log,"--------------------------------One Result Found------------------------------- \n");
+	}
+	fclose(fp_log);
+}
 
 int main()
 {
 	srand(time(NULL));
+
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
@@ -59,15 +105,18 @@ int main()
 	int trench_no=1;
 	int cost_main = cost_full(coeff_mat,array_main);
 	int cost_vns;
-	int k_neighbourhood = 1;
-	int count_vns_shaked = 0; 
+	int neighbourhood_no = 1;
+	int shake_no = 1; 
+	print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
+
 	while(cost_main!=0)
 	{
-		cout<<"At VNS Neighbourhood : "<<(count_vns_shaked+1)<<endl;
-		shake(array_main,array,k_neighbourhood);  // Shaked To K'th Neighbourhood
-		cout<<"Cost Before Shaking "<<cost_full(coeff_mat,array_main)<<endl;
+		shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
 		lowest_cost = cost_full(coeff_mat,array);
-		cout<<"Cost After Shaking to "<<k_neighbourhood<<" 'th Neighbourhood = "<<lowest_cost<<endl;
+		cout<<"Cost Before Shaking == "<<cost_main<<endl;
+		cout<<"Cost After Shaking == "<<lowest_cost<<endl;
+		//print_vns(0,0,0,1,random_run_no,neighbourhood_no,trench_no,shake_no);
+
 		// Local Search Starts Here
 		flag_test_2=1;
 		count_2=0;
@@ -87,7 +136,7 @@ int main()
 				check_and_swap(array,array_test,coeff_mat);
 		}
 		// Till Here Local Search 
-		if(is_okay(array_test)==0)
+		if(is_okay(array)==0)
 		{
 			cout<<"Problem In Array : Fatal Error"<<endl;
 			return 0;
@@ -95,40 +144,51 @@ int main()
 
 		cost_vns = cost_full(coeff_mat,array);
 		cout<<"Cost After Local Search : "<<cost_vns<<endl;
-		cout<<" Trench Number : "<<(count_vns_shaked+1)<<" Order of Neighbourhood : "<<k_neighbourhood<<endl;
 
-		if(cost_vns<cost_main)
+		if(cost_vns<=cost_main)
 		{
+			print_vns(0,0,0,1,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 			array_main = array;
 			cost_main = cost_vns;
-			k_neighbourhood = 1;
-			count_vns_shaked = 0;
-			cout<<"--------------------------------------------------------------------------------------"<<endl;
-			cout<<" : New Trench Found : "<<endl;
-			cout<<" Cost = "<<cost_main<<endl;
+			trench_no++;
+			shake_no = 1;
+			print_vns(0,0,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 			print_result_lowest(cost_main,array_main);
 		}
-		else 
-			count_vns_shaked++;
-
-		if(count_vns_shaked>=50)
-		{
-			k_neighbourhood++;
-			cout<<"======================================================================================="<<endl;
-			cout<<" Shifting To New Neighbourhood Order : "<<k_neighbourhood<<endl;
+		else {	
+			print_vns(0,0,0,1,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+			shake_no++;
 		}
 
-		if(k_neighbourhood>=20)
+		if(shake_no>=50)
 		{
-			k_neighbourhood = 1;
-			count_vns_shaked = 0;
+			trench_no++;
+			shake_no = 1;
+			print_vns(0,0,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+		}
+
+		if(trench_no>=50)
+		{
+			neighbourhood_no++;
+			trench_no = 1;
+			shake_no = 1;
+			print_vns(0,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+		}
+
+		if(neighbourhood_no>=20)
+		{
+			neighbourhood_no = 1;
+			trench_no = 1;
+			shake_no = 1; 
 			random_generate(array_main);
 			cost_main = cost_full(coeff_mat,array_main);
+			random_run_no++;
+			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
 		}
 	}
 
-	cout<<"--------------------------------One Result Found-------------------------------"<<endl;
 	print_result_new(array_main);
+	print_vns(0,0,0,0,0,0,0,0,0,0);
 	cout<<endl<<array_main<<endl;
 	return 0;
 }

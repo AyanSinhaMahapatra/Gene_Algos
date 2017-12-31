@@ -7,15 +7,15 @@ using namespace std;
 using namespace Eigen; 
 
 	int genetic_till=10000; 
-	int swapper_gen=0;
-	int flag_test_1 =1;
+	//int swapper_gen=0;
+	//int flag_test_1 =1;
 	int flag_test_2 =1;
-	int result_flag=0;
+	//int result_flag=0;
 	int count_2=0;
 	int flag_swap=1;
 	int lowest_cost_whole=100;
-	int random_run_no=1;
-	float changes_total=0;
+	//int random_run_no=1;
+	//float changes_total=0;
 	float mutation_probablity=0.0001; 
 	float mutation_total=0;
 	int p1_length=20;
@@ -43,6 +43,8 @@ int change_in_array(Eigen::VectorXd& array,Eigen::VectorXd& array_test);
 void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat);
 void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::MatrixXd& coeff_mat);
 int mutate_array(Eigen::VectorXd& array,float mutation_probablity,Eigen::MatrixXd& coeff_mat);
+int check_array(int rand_gen,int *array_random,int size);
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
 
 int main()
 {
@@ -50,49 +52,84 @@ int main()
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
+    Eigen::VectorXd array_main(116);
     Eigen::VectorXd array_test(116);
 	assign_coeff_mat(coeff_mat);
-
-	//Testing Already Found Results
-	//assign_result_arrays(array);
-	//cout<<"Cost = "<<cost_full(coeff_mat,array)<<endl;
-	//flag=is_okay(array);
-	 
-//Main Loop Starts
-while(flag_test_1) //Remove these Comments In Production	
-{
-//               Random Generate Array Following Guidelines
-	cout<<endl<<"-New Random Run Number  --- "<<random_run_no<<endl;
-	random_run_no++;
-	random_generate(array);
-	array_test=array;
-	mutation_total=0;
-	count_2=0;
-	changes_total=0;
-	flag_test_2=1;
-	lowest_cost=cost_full(coeff_mat,array);
-	while(flag_test_2)
+	random_generate(array_main);
+	int trench_no=1;
+	int cost_main = cost_full(coeff_mat,array_main);
+	int cost_vns;
+	int k_neighbourhood = 1;
+	int count_vns_shaked = 0; 
+	while(cost_main!=0)
 	{
-       
-		count_2++;
-		genetic_algorithm(p1_length,array,array_test,coeff_mat);
-		genetic_algorithm(p2_length,array,array_test,coeff_mat);	
-
-		//Print Into Screen If Update In Cost Or At Certain Values of Generations
-		if((cost_after<lowest_cost)||((count_2%(genetic_till/10))==0))
+		cout<<"At VNS Neighbourhood : "<<(count_vns_shaked+1)<<endl;
+		shake(array_main,array,k_neighbourhood);  // Shaked To K'th Neighbourhood
+		cout<<"Cost Before Shaking "<<cost_full(coeff_mat,array_main)<<endl;
+		lowest_cost = cost_full(coeff_mat,array);
+		cout<<"Cost After Shaking to "<<k_neighbourhood<<" 'th Neighbourhood = "<<lowest_cost<<endl;
+		// Local Search Starts Here
+		flag_test_2=1;
+		count_2=0;
+		while(flag_test_2)
 		{
-			cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
-			lowest_cost=cost_after;
+			count_2++;
+			genetic_algorithm(p1_length,array,array_test,coeff_mat);
+			genetic_algorithm(p2_length,array,array_test,coeff_mat);	
+
+			if((cost_after<lowest_cost)||((count_2%(genetic_till/10))==0))
+			{
+				cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
+				lowest_cost=cost_after;
+			}
+
+			if((count_2%genetic_till)==0)
+				check_and_swap(array,array_test,coeff_mat);
+		}
+		// Till Here Local Search 
+		if(is_okay(array_test)==0)
+		{
+			cout<<"Problem In Array : Fatal Error"<<endl;
+			return 0;
 		}
 
-// Check Part     Check IF Cost Decreased in last batch of Iterations/Generations 
-		if((count_2%genetic_till)==0)
-			check_and_swap(array,array_test,coeff_mat);
+		cost_vns = cost_full(coeff_mat,array);
+		cout<<"Cost After Local Search : "<<cost_vns<<endl;
+		cout<<" Trench Number : "<<(count_vns_shaked+1)<<" Order of Neighbourhood : "<<k_neighbourhood<<endl;
+
+		if(cost_vns<cost_main)
+		{
+			array_main = array;
+			cost_main = cost_vns;
+			k_neighbourhood = 1;
+			count_vns_shaked = 0;
+			cout<<"--------------------------------------------------------------------------------------"<<endl;
+			cout<<" : New Trench Found : "<<endl;
+			cout<<" Cost = "<<cost_main<<endl;
+			print_result_lowest(cost_main,array_main);
+		}
+		else 
+			count_vns_shaked++;
+
+		if(count_vns_shaked>=50)
+		{
+			k_neighbourhood++;
+			cout<<"======================================================================================="<<endl;
+			cout<<" Shifting To New Neighbourhood Order : "<<k_neighbourhood<<endl;
+		}
+
+		if(k_neighbourhood>=20)
+		{
+			k_neighbourhood = 1;
+			count_vns_shaked = 0;
+			random_generate(array_main);
+			cost_main = cost_full(coeff_mat,array_main);
+		}
 	}
-//
-    if(result_flag)
-		flag_test_1=0;
-}  //Main Loop Ends
+
+	cout<<"--------------------------------One Result Found-------------------------------"<<endl;
+	print_result_new(array_main);
+	cout<<endl<<array_main<<endl;
 	return 0;
 }
 
@@ -115,7 +152,7 @@ void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& arra
 //                Check Cost of Test Array (#ToDo Enhancement - Of only That Fraction) 
 		cost_prev=cost_full(coeff_mat,array);
 		cost_after=cost_full(coeff_mat,array_test);
-		changes_total+=change_in_array(array,array_test);
+		//changes_total+=change_in_array(array,array_test);
 
 		if(cost_after<=cost_prev)
 		{
@@ -152,8 +189,8 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 					print_result_new(array);
 					cout<<endl<<array<<endl;
 					flag_test_2=0;
-					result_flag=1;
-					return;
+					//result_flag=1;
+					//return;
 				}
 				else{
 					//cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
@@ -164,20 +201,20 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 					flag_swap=1;
 					while((cost_after!=0)&&(flag_swap!=0))
 					{
-						swapper_gen=1;
+						//swapper_gen=1;
 						if(perform_swap(array,array_test))
 						{
 							//cout<<" Swap Not Reducing Cost -- ERROR ERROR"<<endl;
-							if(cost_after<=lowest_cost_whole)
-							{
-								lowest_cost_whole=cost_after;
-								print_result_lowest(lowest_cost_whole,array);
-							}
+							//if(cost_after<=lowest_cost_whole)
+							//{
+								//lowest_cost_whole=cost_after;
+								//print_result_lowest(lowest_cost_whole,array);
+							//}
 							flag_swap=0;
-							cout<<"Mutation Average = "<<float(mutation_total/count_2)/2<<endl;
-							cout<<"Average Changes by Genetic Algo in One go == "<<(changes_total/(count_2*2))<<endl;
-							cout<<"Cost Here Is --  "<<cost_after<<endl;
-							cout<<"Lowest Cost Till Now Is  --  "<<lowest_cost_whole<<endl; 
+							//cout<<"Mutation Average = "<<float(mutation_total/count_2)/2<<endl;
+							//cout<<"Average Changes by Genetic Algo in One go == "<<(changes_total/(count_2*2))<<endl;
+							cout<<"Cost Here Is, After Swapper --  "<<cost_after<<endl;
+							//cout<<"Lowest Cost Till Now Is  --  "<<lowest_cost_whole<<endl; 
 						}
 						cost_after=cost_full(coeff_mat,array);
 						//cout<<"After Peforming "<<swapper_gen<<" of Batches of Swap, Cost is  -  "<<cost_after<<endl;
@@ -192,6 +229,90 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 				}
 			}
 }
+
+int check_array(int rand_gen,int *array_random,int size)
+{
+	int flag = 1; 
+	//cout<<"Size = "<<size<<endl;
+	for(int i=1;i<=size;i++)
+	{
+		if(array_random[i]==rand_gen)
+			flag=0;
+	}
+	return flag;
+}
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood)
+{
+	//cout<<"Stirred Not Shaken"<<endl;
+	int array_loc1[57];
+	int array_loc0[57];
+	int array_random1[k_neighbourhood+1];
+	int array_random0[k_neighbourhood+1];
+	int pointer_0=0;
+	int pointer_1=0;
+	int rand_gen=0;
+	for(int i=1;i<=k_neighbourhood;i++)
+	{
+		array_random1[i]=0;
+		array_random0[i]=0;
+	}
+
+	for(int i=2;i<=114;i++)
+	{
+		if(i==94)
+			i++;
+		if(array_main(i)==0)
+		{
+			pointer_0++;
+			array_loc0[pointer_0] = i; 
+		}
+		else if(array_main(i)==1)
+		{
+			pointer_1++;
+			array_loc1[pointer_1] = i;
+		}
+	}
+	if((pointer_0==56)&&(pointer_1==56))
+	{
+		//cout<<" First Task Okay "<<endl;
+	}
+	else
+	{
+		cout<<" Error : Pointers at :"<<endl;
+		cout<<pointer_1<<" == "<<pointer_0<<endl;
+	}
+
+
+	for(int i=1;i<=k_neighbourhood;i++)
+	{
+		rand_gen = rand() % 56;
+		rand_gen++;
+		while(check_array(rand_gen,array_random1,k_neighbourhood)==0)
+		{
+			rand_gen = rand() % 56;
+			rand_gen++;
+		}
+		array_random1[i]=rand_gen;
+		rand_gen = rand() % 56;
+		rand_gen++;
+		while(check_array(rand_gen,array_random0,k_neighbourhood)==0)
+		{
+			rand_gen = rand() % 56;
+			rand_gen++;
+		}
+		array_random0[i]=rand_gen;
+	}
+
+	array=array_main;
+
+	for(int i=1;i<=k_neighbourhood;i++)
+	{
+		array(array_loc1[array_random1[i]])=0;
+		array(array_loc0[array_random0[i]])=1;
+	}
+}
+
 int mutate_array(Eigen::VectorXd& array,float mutation_probablity,Eigen::MatrixXd& coeff_mat)
 {
 	//srand(time(NULL));

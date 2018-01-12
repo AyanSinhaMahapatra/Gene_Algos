@@ -7,7 +7,7 @@ using namespace std;
 using namespace Eigen; 
 
     int lowest_differance = 115;
-    long long int total_diff = 0;
+    double total_diff = 0;
 
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 void random_generate(Eigen::VectorXd& array);
@@ -26,28 +26,119 @@ void try_difference(Eigen::VectorXd& array,Eigen::MatrixXd& results);
 
 int main()
 {
+    int temp;
+    int number = 0;
+    int numbers[12];
 	srand(time(NULL));
 	//Load Co-efficient Matrix, Initialize Arrays and Variables
-	Eigen::MatrixXd coeff_mat(116,116);
+	Eigen::MatrixXd coeff_mat(200,116);
     assign_coeff_mat(coeff_mat);
 
-    Eigen::MatrixXd results(116,116);     // New Results
+    Eigen::MatrixXd results(200,116);     // New Results
     assign_results_new(results);
 
     // Already Found Results
-    Eigen::MatrixXd results_old(116,116); 
+    Eigen::MatrixXd results_old(200,116); 
     assign_results_old(results_old);
 	
     Eigen::VectorXd array(116);
+    Eigen::VectorXd array2(116);
 
+    for(int i=0;i<=11;i++)
+        numbers[i]=0;
 
-	for(int i=1;i<=200000;i++)
+	for(int i=1;i<=194;i++)
     {
-        random_generate(array);
-        //cout<<"Cost == "<<cost_full(coeff_mat,array)<<endl;
-        try_difference(array,results);
+        for(int j=1;j<=194;j++)
+        {
+            if(i==j)
+                j++;
+            array = results.row(i);
+            array2 = results.row(j);
+            temp = change_in_array(array,array2); 
+            //cout<<temp<<" ";
+            if(temp<lowest_differance)
+                lowest_differance = temp;
+            total_diff+=temp;
+            if(temp<=10)   
+                numbers[0]++;
+            if(temp<=20)   
+                numbers[1]++;
+            if(temp<=30)   
+                numbers[2]++;
+            if(temp<=40)   
+                numbers[3]++;
+            if(temp<=50)   
+                numbers[4]++;
+            if(temp<=60)   
+                numbers[5]++;
+            if(temp<=70)   
+                numbers[6]++;
+            if(temp<=80)   
+                numbers[7]++;
+            if(temp<=90)   
+                numbers[8]++;
+            if(temp<=100)   
+                numbers[9]++;
+            if(temp<=115)   
+                numbers[10]++;
+        }
+        //cout<<endl;
+            
     }
-    cout<<"Lowest == "<<lowest_differance<<endl;
+    cout<<"Lowest Difference == "<<lowest_differance<<endl;
+    cout<<"Average Difference == "<<(total_diff)/(194*194-194)<<endl;
+    cout<<"Changes == "<<endl;
+    for(int i=0;i<=11;i++)
+        {
+            cout<<numbers[i]<<" ";
+            numbers[i]=0;
+        }
+    cout<<endl;
+
+    lowest_differance = 115;
+    total_diff = 0;
+
+    for(int i=1;i<=194;i++)
+    {
+        array = results.row(i);
+        for(int j=1;j<=4;j++)
+        {
+            array2 = results_old.row(j);
+            temp = change_in_array(array,array2); 
+            if(temp<lowest_differance)
+                lowest_differance = temp;
+            total_diff+=temp;
+            if(temp<=10)   
+                numbers[0]++;
+            if(temp<=20)   
+                numbers[1]++;
+            if(temp<=30)   
+                numbers[2]++;
+            if(temp<=40)   
+                numbers[3]++;
+            if(temp<=50)   
+                numbers[4]++;
+            if(temp<=60)   
+                numbers[5]++;
+            if(temp<=70)   
+                numbers[6]++;
+            if(temp<=80)   
+                numbers[7]++;
+            if(temp<=90)   
+                numbers[8]++;
+            if(temp<=100)   
+                numbers[9]++;
+            if(temp<=115)   
+                numbers[10]++;
+        }
+    }
+    cout<<"Lowest Difference == "<<lowest_differance<<endl;
+    cout<<"Average Difference == "<<(total_diff)/(194*4)<<endl;
+    cout<<"Changes == "<<endl;
+    for(int i=0;i<=11;i++)
+        cout<<numbers[i]<<" ";
+
 
 	return 0;
 }
@@ -85,7 +176,7 @@ void assign_results_new(Eigen::MatrixXd& coeff_mat)
     while(flag)
     {
         ch=fgetc(fp);
-        if(ch==EOF||rows==116)
+        if(ch==EOF||rows==200)
         {
             flag=0;
             continue;

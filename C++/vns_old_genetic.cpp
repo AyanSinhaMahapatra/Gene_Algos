@@ -16,7 +16,7 @@ using namespace Eigen;
 	int count_2=0;
 	int flag_swap=1;
 	int lowest_cost_whole=100;
-	int random_run_no=1;
+	int random_run_no=20;
 	//float changes_total=0;
 	float mutation_probablity=0; 
 	float mutation_total=0;
@@ -28,8 +28,8 @@ using namespace Eigen;
 	int cost_prev=0,cost_after=0;
 	int lowest_cost=100; //Value Doesn't Matter
 	int max_shake = 10;
-	int max_trench = 20;
-	int max_neigh = 40;
+	int max_trench = 5;
+	int max_neigh = 30;
 	int shake_no = 1;
 	int trench_no=1; 
 	int neighbourhood_no = 1;
@@ -82,10 +82,10 @@ int main()
     Eigen::MatrixXd results_new(116,116);     // New Results
     assign_results_new(results_new);
 
-    //array_main = results_new.row(random_run_no);
+    array_main = results_new.row(random_run_no);
     //shake(array_main,array,5);
     //array_main=array;
-	random_generate(array_main);
+	//random_generate(array_main);
 	array=array_main;
 
 	int cost_main = cost_full(coeff_mat,array_main);
@@ -144,19 +144,19 @@ int main()
 		else {	
 			if(cost_vns<7)
 				print_result_lowest(cost_vns,array);
-			try_difference(array,results_old);   //Fill Here
+			//try_difference(array,results_old);   //Fill Here
 			cout<<"Numbers = "<<random_run_no<<" "<<neighbourhood_no<<" "<<trench_no<<" "<<shake_no<<endl;
 			shake_no++;
 		}
 
-		if(shake_no>=max_shake) //max_shake = 20
+		if(shake_no>=max_shake) //max_shake = 10
 		{
 			trench_no++;
 			shake_no = 1;
 			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 		}
 
-		if(trench_no>=max_trench) //max_trench = 10
+		if(trench_no>=max_trench) //max_trench = 5
 		{
 			neighbourhood_no++;
 			trench_no = 1;
@@ -164,14 +164,14 @@ int main()
 			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 		}
 
-		if(neighbourhood_no>=max_neigh) //max_neigh = 20
+		if(neighbourhood_no>=max_neigh) //max_neigh = 30
 		{
-			neighbourhood_no = 1;
+			neighbourhood_no = 20;
 			trench_no = 1;
 			shake_no = 1; 
 			random_run_no++;
-			//array_main = results_new.row(random_run_no);
-			random_generate(array_main);
+			array_main = results_new.row(random_run_no);
+			//random_generate(array_main);
 			cost_main = cost_full(coeff_mat,array_main);
 			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
 		}
@@ -380,7 +380,7 @@ void print_vns(int flag_random,int flag_neigh,int flag_tren,int flag_shake,int r
 	int shake_no,int cost_trench,int cost_shake)
 {
 	FILE *fp_log;
-	fp_log = fopen("vns_log_orig.txt","a"); 
+	fp_log = fopen("vns_log_old_1.txt","a"); 
 	if(flag_random==1)
 	{
 		cout<<"***********************************************************************************"<<endl;
@@ -643,7 +643,7 @@ void print_result_new(Eigen::VectorXd& array)
 void print_result_lowest(int cost,Eigen::VectorXd& array)
 {
 	FILE* fp_rslt_low;
-	fp_rslt_low=fopen("results_found_by_me_lowest_org.txt","a+");
+	fp_rslt_low=fopen("results_found_by_me_lowest_1.txt","a+");
 	int temp;
 	cout<<endl;
 	for(int i=1;i<116;i++)

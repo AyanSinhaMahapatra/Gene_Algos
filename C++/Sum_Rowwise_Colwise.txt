@@ -49,3 +49,13 @@ Total Cost On First Swap == 169636
 Swaps Performed == 6272
 Highest First Swap Cost == 62
 Lowest First Swap Cost == 5
+
+
+Lowest Difference == 10
+Average Difference == 56.8303
+Changes ==
+2 28 60 182 5334 28991 37239 37443 37443 37443 37443 0
+Lowest Difference == 36
+Average Difference == 56.9974
+Changes ==
+0 0 0 2 107 591 773 776 776 776 776 0s

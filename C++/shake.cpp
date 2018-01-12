@@ -103,9 +103,9 @@ int main()
     Eigen::VectorXd array_main(116);
 	assign_coeff_mat(coeff_mat);
 
-	for(int i=0;i<=10000;i++)
+	for(int i=0;i<=100000;i++)
 	{
-		int rand_gen = rand() % 21;
+		int rand_gen = rand() % 51;
 		rand_gen++;
 		random_generate(array_main);
 	    shake(array_main,array,rand_gen);

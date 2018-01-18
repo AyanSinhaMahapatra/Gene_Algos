@@ -28,11 +28,11 @@ using namespace Eigen;
 	int cost_prev=0,cost_after=0;
 	int lowest_cost=100; //Value Doesn't Matter
 	int max_shake = 10;
-	int max_trench = 20;
-	int max_neigh = 40;
+	int max_trench = 50;
+	int max_neigh = 30;
 	int shake_no = 1;
 	int trench_no=1; 
-	int neighbourhood_no = 1;
+	int neighbourhood_no = 20;
 	int lowest_differance = 115;
 
 //Function Declarations
@@ -82,10 +82,10 @@ int main()
     Eigen::MatrixXd results_new(116,116);     // New Results
     assign_results_new(results_new);
 
-    //array_main = results_new.row(random_run_no);
+    array_main = results_new.row(3);
     //shake(array_main,array,5);
     //array_main=array;
-	random_generate(array_main);
+	//random_generate(array_main);
 	array=array_main;
 
 	int cost_main = cost_full(coeff_mat,array_main);
@@ -129,7 +129,7 @@ int main()
 		}
 
 		cost_vns = cost_full(coeff_mat,array);
-		cout<<"Cost After Local Search : "<<cost_vns<<endl;
+		//cout<<"Cost After Local Search : "<<cost_vns<<endl;
 
 		if(cost_vns<cost_main)
 		{
@@ -142,10 +142,10 @@ int main()
 			print_result_lowest(cost_main,array_main);
 		}
 		else {	
-			if(cost_vns<7)
+			if(cost_vns<13)
 				print_result_lowest(cost_vns,array);
 			try_difference(array,results_old);   //Fill Here
-			cout<<"Numbers = "<<random_run_no<<" "<<neighbourhood_no<<" "<<trench_no<<" "<<shake_no<<endl;
+			cout<<"Numbers = "<<random_run_no<<" "<<neighbourhood_no<<" "<<trench_no<<" "<<shake_no<<"Cost == "<<cost_vns<<endl;
 			shake_no++;
 		}
 
@@ -253,7 +253,7 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 				}
 				else{
 					//cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
-					cout<<"Cost = "<<cost_after<<endl<<endl;
+					//cout<<"Cost = "<<cost_after<<endl<<endl;
 
 					// Swapper Stuff Goes Here
 					//cout<<" Swapper Mode Enabled "<<endl;
@@ -273,7 +273,7 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 							flag_swap=0;
 							//cout<<"Mutation Average = "<<float(mutation_total/count_2)/2<<endl;
 							//cout<<"Average Changes by Genetic Algo in One go == "<<(changes_total/(count_2*2))<<endl;
-							cout<<"Cost Here Is, After Swapper --  "<<cost_after<<endl;
+							//cout<<"Cost Here Is, After Swapper --  "<<cost_after<<endl;
 							//cout<<"Lowest Cost Till Now Is  --  "<<lowest_cost_whole<<endl; 
 						}
 						cost_after=cost_full(coeff_mat,array);
@@ -465,7 +465,7 @@ void try_difference(Eigen::VectorXd& array,Eigen::MatrixXd& results)
 void assign_results_new(Eigen::MatrixXd& coeff_mat)
 {
     FILE* fp;
-    fp = fopen("results_found_by_me_lowest_main.txt","r");
+    fp = fopen("results_found_by_me_lowest_org.txt","r");
     int count=0;
     char ch;
     int flag = 1;
@@ -855,16 +855,25 @@ void random_generate(Eigen::VectorXd& array) //Generates A Random Array which ob
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
 {
 	Eigen::VectorXd array_temp(116);
+    int temp_cost=0;
 	array_temp = coeff_mat * array;
-	//cout<<array_temp;
 	for(int i=1;i<=115;i++)
 	{
-		if((array_temp(i)>=57)&&(array_temp(i)<=72))
+        temp_cost=array_temp(i);
+        //cout<<temp_cost<<endl;
+		if((temp_cost>=57)&&(temp_cost<=72))
 			array_temp(i)=0;
-		else if(array_temp(i)<57)
-			array_temp(i)=(57-int(array_temp(i)))^2;
-		else if(array_temp(i)>72)
-			array_temp(i)=(int(array_temp(i))-72)^2;
+		if(temp_cost<57)
+		{
+            array_temp(i)=(57-temp_cost)*(57-temp_cost);
+            //cout<<"Heer"<<endl;
+        }
+		if(temp_cost>72)
+        {
+			array_temp(i)=(temp_cost-72)*(temp_cost-72);
+            //cout<<"Heer"<<endl;
+        }
+        
 	}
 	return array_temp.sum();
 }

@@ -34,8 +34,8 @@ int main()
 	Eigen::MatrixXd coeff_mat(200,116);
     assign_coeff_mat(coeff_mat);
 
-    Eigen::MatrixXd results(200,116);     // New Results
-    assign_results_new(results);
+    Eigen::MatrixXd results_new(300,116);     // New Results
+    assign_results_new(results_new);
 
     // Already Found Results
     Eigen::MatrixXd results_old(200,116); 
@@ -44,6 +44,15 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array2(116);
 
+    for (int i = 1; i < 4; i++)
+    {
+        array=results_new.row(i);
+        temp=cost_full(coeff_mat,array);
+        cout<<"Cost = "<<temp<<endl;
+    }
+
+
+/*
     for(int i=0;i<=11;i++)
         numbers[i]=0;
 
@@ -138,8 +147,7 @@ int main()
     cout<<"Changes == "<<endl;
     for(int i=0;i<=11;i++)
         cout<<numbers[i]<<" ";
-
-
+*/
 	return 0;
 }
 
@@ -168,7 +176,7 @@ void try_difference(Eigen::VectorXd& array,Eigen::MatrixXd& results)
 void assign_results_new(Eigen::MatrixXd& coeff_mat)
 {
     FILE* fp;
-    fp = fopen("results_found_by_me_lowest_main.txt","r");
+    fp = fopen("results_found_by_me_lowest_org.txt","r");
     int count=0;
     char ch;
     int flag = 1;
@@ -176,7 +184,7 @@ void assign_results_new(Eigen::MatrixXd& coeff_mat)
     while(flag)
     {
         ch=fgetc(fp);
-        if(ch==EOF||rows==200)
+        if(ch==EOF||rows==300)
         {
             flag=0;
             continue;
@@ -272,20 +280,26 @@ void try_swap_fixed(Eigen::VectorXd& array,Eigen::MatrixXd& coeff_mat)
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
 {
 	Eigen::VectorXd array_temp(116);
+    int temp_cost=0;
 	array_temp = coeff_mat * array;
-	//cout<<array_temp;
 	for(int i=1;i<=115;i++)
 	{
-        
-		if((array_temp(i)>=57)&&(array_temp(i)<=72))
+        temp_cost=array_temp(i);
+        //cout<<temp_cost<<endl;
+		if((temp_cost>=57)&&(temp_cost<=72))
 			array_temp(i)=0;
-		else if(array_temp(i)<57)
-			array_temp(i)=(57-int(array_temp(i)))^2;
-		else if(array_temp(i)>72)
-			array_temp(i)=(int(array_temp(i))-72)^2;
-        //cout<<array_temp(i);
+		if(temp_cost<57)
+		{
+            array_temp(i)=(57-temp_cost)*(57-temp_cost);
+           //cout<<"Heer"<<endl;
+        }
+		if(temp_cost>72)
+        {
+			array_temp(i)=(temp_cost-72)*(temp_cost-72);
+           // cout<<"Heer"<<endl;
+        }
+        
 	}
-    //cout<<endl;
 	return array_temp.sum();
 }
 

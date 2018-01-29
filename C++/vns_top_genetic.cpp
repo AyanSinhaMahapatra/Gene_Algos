@@ -27,13 +27,15 @@ using namespace Eigen;
 	int p3_length=20;
 	int cost_prev=0,cost_after=0;
 	int lowest_cost=100; //Value Doesn't Matter
-	int max_shake = 10;
+	int max_shake = 5;
 	int max_trench = 50;
 	int max_neigh = 30;
 	int shake_no = 1;
 	int trench_no=1; 
 	int neighbourhood_no = 20;
 	int lowest_differance = 115;
+	int genetic_top_range = 1000;
+	int genetic_top_cost = 10000000;
 
 //Function Declarations
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
@@ -72,6 +74,8 @@ int main()
 	Eigen::MatrixXd coeff_mat(116,116);
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_main(116);
+    Eigen::VectorXd array_temp(116);
+    Eigen::VectorXd array_best(116);
     Eigen::VectorXd array_test(116);
 	assign_coeff_mat(coeff_mat);
 
@@ -96,6 +100,8 @@ int main()
 	{
 		//shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
 		lowest_cost = cost_full(coeff_mat,array);
+		genetic_top_cost = lowest_cost;
+		array_best = array;
 		//cout<<"Cost Before Shaking == "<<cost_main<<endl;
 		//cout<<"Cost After Shaking == "<<lowest_cost<<endl;
 
@@ -105,17 +111,46 @@ int main()
 		while(flag_test_2)
 		{
 			count_2++;
-			genetic_algorithm(p1_length,array,array_test,coeff_mat);
-			genetic_algorithm(p2_length,array,array_test,coeff_mat);
-			genetic_algorithm(p3_length,array,array_test,coeff_mat);
+			array_temp = array;
 
-			try_swap_fixed(array,coeff_mat);
+			genetic_algorithm(p1_length,array,array_test,coeff_mat);
+			cost_after=cost_full(coeff_mat,array);
+			if(cost_after<genetic_top_cost)
+			{
+				array_best = array;
+				genetic_top_cost = cost_after;
+			}
+
+			array = array_temp;
+			genetic_algorithm(p2_length,array,array_test,coeff_mat);
+			cost_after=cost_full(coeff_mat,array);
+			if(cost_after<genetic_top_cost)
+			{
+				array_best = array;
+				genetic_top_cost = cost_after;
+			}
+
+			array = array_temp;
+			genetic_algorithm(p3_length,array,array_test,coeff_mat);
+			cost_after=cost_full(coeff_mat,array);
+			if(cost_after<genetic_top_cost)
+			{
+				array_best = array;
+				genetic_top_cost = cost_after;
+			}
+
+			array = array_temp;
 			cost_after=cost_full(coeff_mat,array);
 
-			if((cost_after<lowest_cost)||((count_2%(genetic_till/10))==0))
+			if((count_2 % genetic_top_range)==0)
 			{
-				cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
-				lowest_cost=cost_after;
+				if(genetic_top_cost<cost_after)
+				{
+					array = array_best; 
+					try_swap_fixed(array,coeff_mat);
+					lowest_cost=genetic_top_cost;
+				}
+				cout<<"Cost at Generation "<<count_2<<" = "<<genetic_top_cost<<endl; 
 			}
 
 			if((count_2%genetic_till)==0)
@@ -172,8 +207,8 @@ int main()
 			trench_no = 1;
 			shake_no = 1; 
 			random_run_no++;
-			array_main = results_new.row(random_run_no);
-			//random_generate(array_main);
+			//array_main = results_new.row(random_run_no);
+			random_generate(array_main);
 			cost_main = cost_full(coeff_mat,array_main);
 			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
 		}

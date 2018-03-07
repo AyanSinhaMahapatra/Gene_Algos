@@ -26,6 +26,7 @@ using namespace Eigen;
 	int p2_no=2;     //Has to be Even //Constant 
 	int p3_length=20;
 	int cost_prev=0,cost_after=0;
+	int cost_before = 0;
 	int lowest_cost=100; //Value Doesn't Matter
 	int max_shake = 10;
 	int max_trench = 50;
@@ -73,6 +74,7 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_main(116);
     Eigen::VectorXd array_test(116);
+    Eigen::VectorXd array_temp(116);
 	assign_coeff_mat(coeff_mat);
 
     //Old Results
@@ -90,11 +92,11 @@ int main()
 
 	int cost_main = cost_full(coeff_mat,array_main);
 	int cost_vns;
-	print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
+	//print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
 
 	while(cost_main!=0)
 	{
-		//shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
+		shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
 		lowest_cost = cost_full(coeff_mat,array);
 		//cout<<"Cost Before Shaking == "<<cost_main<<endl;
 		//cout<<"Cost After Shaking == "<<lowest_cost<<endl;
@@ -105,6 +107,10 @@ int main()
 		while(flag_test_2)
 		{
 			count_2++;
+
+			array_temp = array;
+			cost_before=cost_full(coeff_mat,array);
+
 			genetic_algorithm(p1_length,array,array_test,coeff_mat);
 			genetic_algorithm(p2_length,array,array_test,coeff_mat);
 			genetic_algorithm(p3_length,array,array_test,coeff_mat);
@@ -114,9 +120,12 @@ int main()
 
 			if((cost_after<lowest_cost)||((count_2%(genetic_till/10))==0))
 			{
-				cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
+				//cout<<"Cost at Generation "<<count_2<<" = "<<cost_after<<endl; //Implement If Not Same As Before Then Print
 				lowest_cost=cost_after;
 			}
+
+			if(cost_after>cost_before)
+				array=array_temp;
 
 			if((count_2%genetic_till)==0)
 				check_and_swap(array,array_test,coeff_mat);
@@ -129,33 +138,33 @@ int main()
 		}
 
 		cost_vns = cost_full(coeff_mat,array);
-		cout<<"Cost After Local Search : "<<cost_vns<<endl;
+		//cout<<"Cost After Local Search : "<<cost_vns<<endl;
 
 		if(cost_vns<cost_main)
 		{
-			print_vns(0,0,0,1,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+			//print_vns(0,0,0,1,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 			array_main = array;
 			cost_main = cost_vns;
 			trench_no++;
 			shake_no = 1;
-			print_vns(0,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+			//print_vns(0,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 			print_result_lowest(cost_main,array_main);
 		}
 		else{	
-			if(cost_vns<10)
+			if(cost_vns<13)
 				print_result_lowest(cost_vns,array);
 			try_difference(array,results_old);   //Fill Here
-			cout<<"Numbers = "<<random_run_no<<" "<<neighbourhood_no<<" "<<trench_no<<" "<<shake_no<<"Cost == "<<cost_vns<<endl;
+			//cout<<"Numbers = "<<random_run_no<<" "<<neighbourhood_no<<" "<<trench_no<<" "<<shake_no<<"Cost == "<<cost_vns<<endl;
 			shake_no++;
 		}
 
 		if(shake_no>=max_shake) //max_shake = 20
 		{
-			shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
+			//shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
 			lowest_cost = cost_full(coeff_mat,array);
 			trench_no++;
 			shake_no = 1;
-			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+			//print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 		}
 
 		if(trench_no>=max_trench) //max_trench = 10
@@ -163,7 +172,7 @@ int main()
 			neighbourhood_no++;
 			trench_no = 1;
 			shake_no = 1;
-			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
+			//print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
 		}
 
 		if(neighbourhood_no>=max_neigh) //max_neigh = 20
@@ -172,10 +181,10 @@ int main()
 			trench_no = 1;
 			shake_no = 1; 
 			random_run_no++;
-			array_main = results_new.row(random_run_no);
-			//random_generate(array_main);
+			//array_main = results_new.row(random_run_no);
+			random_generate(array_main);
 			cost_main = cost_full(coeff_mat,array_main);
-			print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
+			//print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
 		}
 	}
 
@@ -206,9 +215,9 @@ void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& arra
 		cost_prev=cost_full(coeff_mat,array);
 		cost_after=cost_full(coeff_mat,array_test);
 		//changes_total+=change_in_array(array,array_test);
-
+		array=array_test;
 		//if(((cost_prev-cost_after)>5)||((cost_after<=cost_prev)&&(cost_prev<8)))
-		if(cost_after<=cost_prev)
+		/*if(cost_after<=cost_prev)
 		{
 			if(is_okay(array_test))
 				array=array_test;
@@ -221,7 +230,7 @@ void genetic_algorithm(int p_length,Eigen::VectorXd& array,Eigen::VectorXd& arra
 		else{
 			array_test=array;
 			cost_after=cost_prev;
-		}
+		}*/
 
 			if(is_okay(array_test)==0)
 			{
@@ -255,7 +264,7 @@ void check_and_swap(Eigen::VectorXd& array,Eigen::VectorXd& array_test,Eigen::Ma
 				}
 				else{
 					//cout<<"--------------------------------Stuck Somewhere-------------------------------"<<endl;
-					cout<<"Cost = "<<cost_after<<endl<<endl;
+					//cout<<"Cost = "<<cost_after<<endl<<endl;
 
 					// Swapper Stuff Goes Here
 					//cout<<" Swapper Mode Enabled "<<endl;

@@ -8,8 +8,8 @@ using namespace Eigen;
 
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
-void assign_result_arrays(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
+void assign_results_old(Eigen::MatrixXd& coeff_mat);
 
 int main()
 {
@@ -23,57 +23,108 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_test(116);
     assign_coeff_mat(coeff_mat);
-	assign_result_arrays(array);
-	array_test=array;
-	//Loops
-	for(int i=2;i<115;i++)
-	{
-		if(i==94)
-			i++;
-		cout<<"I == "<<i<<endl;
-		for(int j=2;j<115;j++)
+	
+	Eigen::MatrixXd results_old(200,116); 
+    assign_results_old(results_old);
+
+    for (int i = 1; i < 5; i++)
+    {
+    	cout<<"Result "<<i<<" : Stats "<<endl;
+    	temp=-1;
+		swaps_performed=0;
+		cost=0;
+		cost_sum=0;
+		cost_lowest=300;
+		cost_highest=0;
+        
+        array=results_old.row(i);
+        array_test=array;
+        temp=cost_full(coeff_mat,array);
+        cout<<"Cost = "<<temp<<endl;
+    
+		for(int i=2;i<115;i++)
 		{
-			if(j==94)
-				j++;
-
-			if(array(i)!=array(j))
+			if(i==94)
+				i++;
+			//cout<<"I == "<<i<<endl;
+			for(int j=2;j<115;j++)
 			{
-				swaps_performed++;
-
-				//cout<<"Cost Before == "<<cost_full(coeff_mat,array)<<endl;
-				//Swap I and J 
-				temp = array(i);
-				array(i)=array(j);
-				array(j)=temp;
-				//cout<<"Cost After == "<<cost_full(coeff_mat,array)<<endl;
-			
-				//Compute Cost
-				cost = cost_full(coeff_mat,array);
-				cost_sum+=cost;
-				if(cost<cost_lowest)
-					cost_lowest=cost;
-				if(cost>cost_highest)
-					cost_highest=cost;
-
-				//Reswap
-				temp = array(i);
-				array(i)=array(j);
-				array(j)=temp;
-
-				if(array!=array_test)
+				if(j==94)
+					j++;
+	
+				if(array(i)!=array(j))
 				{
-					cout<<"Problem Here at "<<i<<"--"<<j<<endl;
-					array=array_test;
+					swaps_performed++;
+	
+					//cout<<"Cost Before == "<<cost_full(coeff_mat,array)<<endl;
+					//Swap I and J 
+					temp = array(i);
+					array(i)=array(j);
+					array(j)=temp;
+					//cout<<"Cost After == "<<cost_full(coeff_mat,array)<<endl;
+				
+					//Compute Cost
+					cost = cost_full(coeff_mat,array);
+					cost_sum+=cost;
+					if(cost<cost_lowest)
+						cost_lowest=cost;
+					if(cost>cost_highest)
+						cost_highest=cost;
+	
+					//Reswap
+					temp = array(i);
+					array(i)=array(j);
+					array(j)=temp;
+	
+					if(array!=array_test)
+					{
+						cout<<"Problem Here at "<<i<<"--"<<j<<endl;
+						array=array_test;
+					}
 				}
 			}
 		}
+	
+		cout<<"Average Cost On First Swap == "<<(cost_sum/swaps_performed)<<endl;
+		cout<<"Swaps Performed == "<<swaps_performed<<endl;
+		cout<<"Highest First Swap Cost == "<<cost_highest<<endl;
+		cout<<"Lowest First Swap Cost == "<<cost_lowest<<endl;
 	}
+}
 
-	cout<<"Average Cost On First Swap == "<<(cost_sum/swaps_performed)<<endl;
-	cout<<"Total Cost On First Swap == "<<cost_sum<<endl;
-	cout<<"Swaps Performed == "<<swaps_performed<<endl;
-	cout<<"Highest First Swap Cost == "<<cost_highest<<endl;
-	cout<<"Lowest First Swap Cost == "<<cost_lowest<<endl;
+void assign_results_old(Eigen::MatrixXd& coeff_mat)
+{
+    FILE* fp;
+    fp = fopen("already_Found_results.txt","r");
+    int count=0;
+    char ch;
+    int flag = 1;
+    int rows=1,columns=1;
+    while(flag)
+    {
+        ch=fgetc(fp);
+        if(ch==EOF||rows==116)
+        {
+            flag=0;
+            continue;
+        }
+        if(ch!='\n')
+        {
+            int temp;
+            temp=ch;
+            temp-=48;
+            coeff_mat(rows,columns)=temp;
+        }
+        count++;
+        columns++;
+        if(columns==116)
+        {
+            ch=fgetc(fp);
+            columns=1;
+            rows++;
+        }
+    }
+    //cout<<"Number of Characters == "<<count<<endl;
 }
 
 int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
@@ -98,54 +149,20 @@ int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
 {
 	Eigen::VectorXd array_temp(116);
+    int temp_cost=0;
 	array_temp = coeff_mat * array;
-	//cout<<array_temp;
 	for(int i=1;i<=115;i++)
 	{
-		if((array_temp(i)>=57)&&(array_temp(i)<=72))
+        temp_cost=array_temp(i);
+        //cout<<temp_cost<<endl;
+		if((temp_cost>=57)&&(temp_cost<=72))
 			array_temp(i)=0;
-		else if(array_temp(i)<57)
-			array_temp(i)=(57-int(array_temp(i)))^2;
-		else if(array_temp(i)>72)
-			array_temp(i)=(int(array_temp(i))-72)^2;
+		if(temp_cost<57)
+            array_temp(i)=(57-temp_cost)*(57-temp_cost);
+		if(temp_cost>72)
+			array_temp(i)=(temp_cost-72)*(temp_cost-72);
 	}
 	return array_temp.sum();
-}
-
-void assign_result_arrays(Eigen::VectorXd& array)
-{
-	array.fill(0);
-	FILE* fp;
-	fp = fopen("already_Found_results.txt","r");
-	int count=0;
-    char ch;
-    int flag = 1;
-    int columns=1;
-    int rows=1;
-    while(flag)
-    {
-    	ch=fgetc(fp);
-    	if(ch==EOF||rows==2)
-    	{
-    		flag=0;
-    		continue;
-    	}
-    	else if(ch!='\n')
-    	{
-    		int temp;
-    		temp=ch;
-    		temp-=48;
-    		array(columns)=temp;
-    	}
-    	count++;
-    	columns++;
-    	if(columns==116)
-    	{
-    		ch=fgetc(fp);
-    		columns=1;
-    		rows++;
-    	}
-    }
 }
 
 // Opening The File Containing The Co-efficient Matrix

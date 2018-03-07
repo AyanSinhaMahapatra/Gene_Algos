@@ -1,0 +1,54 @@
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 1  Cost = 0 
+Shake Number ::::::::: 1  Cost = 22 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 22 
+                   Neighbourhood Number == 20 
+        Trench Number == 2  Cost = 22 
+Shake Number ::::::::: 1  Cost = 18 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 18 
+                   Neighbourhood Number == 20 
+        Trench Number == 3  Cost = 18 
+Shake Number ::::::::: 4  Cost = 17 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 17 
+                   Neighbourhood Number == 20 
+        Trench Number == 4  Cost = 17 
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 5  Cost = 17 
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 1  Cost = 0 
+Shake Number ::::::::: 1  Cost = 24 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 24 
+                   Neighbourhood Number == 20 
+        Trench Number == 2  Cost = 24 
+Shake Number ::::::::: 1  Cost = 18 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 18 
+                   Neighbourhood Number == 20 
+        Trench Number == 3  Cost = 18 
+Shake Number ::::::::: 3  Cost = 15 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 15 
+                   Neighbourhood Number == 20 
+        Trench Number == 4  Cost = 15 
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 1  Cost = 0 
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 1  Cost = 0 
+                              Random Run Number == 1 
+                   Neighbourhood Number == 20 
+        Trench Number == 1  Cost = 0 
+Shake Number ::::::::: 1  Cost = 20 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 20 
+                   Neighbourhood Number == 20 
+        Trench Number == 2  Cost = 20 
+Shake Number ::::::::: 1  Cost = 19 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 19 
+                   Neighbourhood Number == 20 
+        Trench Number == 3  Cost = 19 
+Shake Number ::::::::: 4  Cost = 14 
+<<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 14 
+                   Neighbourhood Number == 20 
+        Trench Number == 4  Cost = 14 

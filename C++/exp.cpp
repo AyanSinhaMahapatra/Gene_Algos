@@ -22,7 +22,30 @@ void assign_results_old(Eigen::MatrixXd& coeff_mat);
 void print_matrix(Eigen::MatrixXd& mat);
 int change_in_array(Eigen::VectorXd& array,Eigen::VectorXd& array_test);
 void try_difference(Eigen::VectorXd& array,Eigen::MatrixXd& results);
-
+int cost_exp(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
+{
+    Eigen::VectorXd array_temp(116);
+    int temp_cost=0;
+    array_temp = coeff_mat * array;
+    int first = 0;
+    int second= 0; 
+    for(int i=1;i<=115;i++)
+    {
+        temp_cost=array_temp(i);
+        //cout<<temp_cost<<endl;
+        if((temp_cost>=57)&&(temp_cost<=64))
+        {
+            first++;
+        }
+        if((temp_cost>=65)&&(temp_cost<=72))
+        {
+            second++;
+        }
+    }
+    cout<<"First Half = "<<first<<endl;
+    cout<<"Second Half = "<<second<<endl;
+    return array_temp.sum();
+}
 
 int main()
 {
@@ -44,10 +67,10 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array2(116);
 
-    for (int i = 1; i < 4; i++)
+    for (int i = 1; i < 5; i++)
     {
-        array=results_new.row(i);
-        temp=cost_full(coeff_mat,array);
+        array=results_old.row(i);
+        temp=cost_exp(coeff_mat,array);
         cout<<"Cost = "<<temp<<endl;
     }
 

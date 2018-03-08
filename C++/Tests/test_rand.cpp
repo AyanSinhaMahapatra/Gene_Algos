@@ -4,6 +4,16 @@
 #include<ctime>
 using namespace std;
 
+int binary_to_dec(int *array,int array_length)
+{
+	int sum = 0;
+
+	for(int i=array_length;i>0;i--)
+		sum += array[array_length - i + 1]*pow(2,i-1) ;
+
+	return sum;
+}
+
 void random_generate_array(int *array,int length) // Of Length "length" half 1 half 0
 {
 	srand(time(NULL));
@@ -34,7 +44,7 @@ void random_generate_array(int *array,int length) // Of Length "length" half 1 h
 
 int main()
 {
-	int length = 200;
+	int length = 10;
 	int array[length+1];
 	random_generate_array(array,length);
 
@@ -48,8 +58,10 @@ int main()
 	else 
 		cout<<"Cool"<<endl;
 
+	cout<<binary_to_dec(array,length)<<endl;
+
 	for(int i=1;i<=length;i++)
-		//cout<<array[i]<<" ";
+		cout<<array[i]<<" ";
 
 	return 0;
 }

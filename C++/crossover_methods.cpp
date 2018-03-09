@@ -12,13 +12,15 @@ using namespace std;
     int case_cross = 1;   //Change this for change in Crossover Technique
 	int array_length = 10;
 	int crossover_length = 4;
+	int possible_outcomes = 210;
 	int check_array[1025];
 	int level_limit = 5;
 	int no_of_rec = 10;
+	int result[2];
 
 void apply_crossover(int *array);
 void init_check_array();
-int* check_and_print_results(int *array);
+void check_and_print_results(int *array);
 void recursive_trav(int *array,int rec_level);
 void check_history(int *array);
 int binary_to_dec(int *array);
@@ -35,12 +37,21 @@ void one_point_crossover(int *parent1,int *parent2,int *offspring1,int *offsprin
 int main()
 {
 	int array[array_length+1];
-	int *result_temp;
+	double total_results=0;
 	random_generate_array(array);
 
-	init_check_array();
-	recursive_trav(array,1);
-	result_temp = check_and_print_results(check_array);
+	for(int i=1;i<=10000;i++)
+	{
+		init_check_array();
+		recursive_trav(array,1);
+		check_and_print_results(check_array);
+		total_results+=result[0];
+	}
+
+	total_results /= 10000;
+	cout<<total_results<<endl;
+	
+
 
 	return 0;
 }
@@ -73,11 +84,10 @@ void one_point_crossover(int *parent1,int *parent2,int *offspring1,int *offsprin
 
 // Other Functions 
 
-int* check_and_print_results(int *check_array)
+void check_and_print_results(int *check_array)
 {
 	int count_visited = 0;
 	int count_total = 0;
-	int result[2];
 
 	for(int i=1;i<=1024;i++)
 	{
@@ -90,7 +100,7 @@ int* check_and_print_results(int *check_array)
 
 	result[0]=count_visited;
 	result[1]=count_total;
-	return result;
+	return;
 }
 
 void recursive_trav(int *array,int rec_level)
@@ -102,7 +112,10 @@ void recursive_trav(int *array,int rec_level)
 	check_history(array);
 
 	for(int i=1;i<=no_of_rec;i++)
+	{
+		//cout<<rec_level<<"  --  "<<i<<endl;
 		recursive_trav(array,rec_level+1);
+	}
 	return;
 }
 

@@ -7,16 +7,20 @@ using namespace std;
 //Implemented Crossovers and Their Case Numbers
 /*
 	Case 1 : One Point Crossover
+	Case 2 : K-Point Crossover
+	Case 3 : Shuffle Crossover
+	Case 4 : Uniform Crossover
 */
 
     int case_cross = 1;   //Change this for change in Crossover Technique
 	int array_length = 10;
 	int crossover_length = 4;
-	int possible_outcomes = 210;
+	int possible_outcomes = 252;
 	int check_array[1025];
 	int level_limit = 5;
 	int no_of_rec = 10;
 	int result[2];
+	int k_point;
 
 void apply_crossover(int *array);
 void init_check_array();
@@ -33,30 +37,34 @@ void check_array_integrity(int *array);
 
 // All types of Crossover Reproduction Functions
 void one_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
+void k_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
+void shuffle_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
 
 int main()
 {
 	int array[array_length+1];
 	double total_results=0;
-	random_generate_array(array);
-
-	for(int i=1;i<=10000;i++)
-	{
-		init_check_array();
-		recursive_trav(array,1);
-		check_and_print_results(check_array);
-		total_results+=result[0];
-	}
-
-	total_results /= 10000;
-	cout<<total_results<<endl;
 	
-
+	for(int j=4;j<=6;j++)
+	{
+		level_limit = j;
+		for(int i=1;i<=10000;i++)
+		{
+			random_generate_array(array);
+			init_check_array();
+			recursive_trav(array,1);
+			check_and_print_results(check_array);
+			total_results+=result[0];
+		}
+	
+		total_results /= 10000;
+		cout<<level_limit<<" ----- "<<total_results<<endl;
+	}
 
 	return 0;
 }
 
-
+void 
 
 // All types of Crossover Reproduction Functions
 
@@ -82,6 +90,118 @@ void one_point_crossover(int *parent1,int *parent2,int *offspring1,int *offsprin
 	}
 }
 
+//To Check 
+void k_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2)
+{
+	int crossover[k_point];
+	float crossover_float[k_point];
+	float diff = crossover_length/k_point;
+	int start,end,rand_var,pointer,flag=0;
+	crossover_float[0] = diff;
+
+	for(int i=1;i<=k_point;i++)
+	{
+		crossover_float[i]=crossover_float[i-1]+diff;
+		crossover[i]=crossover_float[i];
+	}
+
+	for(int i=0;i<=k_point;i++)
+	{
+		if(i==0)
+			start = 0;
+		else
+			start = crossover[i-1];
+
+		if(i==k_point)
+			end = crossover_length;
+		else
+			end = crossover[i+1];
+
+		rand_var = rand() % (end-start);
+		rand_var+=start;
+
+		crossover[i] = rand_start;
+	}
+
+	temp = crossover[0];
+	pointer = 0;
+	for(int i=0;i<=crossover_length;i++)
+	{
+		while(i!=temp)
+		{
+			if(flag == 0)
+			{
+				offspring1[temp]=parent1[temp];
+				offspring2[temp]=parent2[temp];
+			}
+			else
+			{
+				offspring2[temp]=parent1[temp];
+				offspring1[temp]=parent2[temp];
+			}
+		}
+		if(i==temp)
+		{
+			pointer++;
+			temp = crossover[pointer];
+		}
+	}
+}
+
+//ToDo
+void shuffle_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2)
+{
+	//Shuffle Array Create
+
+	int shuffle1[crossover_length];
+	int shuffle2[crossover_length];
+
+	//Shuffle
+
+	//1-point 
+
+	int rand_boundary = crossover_length-2 ;
+	int rand_var = rand() % rand_boundary;
+	rand_var+=2;
+	//cout<<"Crossover at - "<<rand_var<<endl;
+	int temp = 0;
+	while(temp<=rand_var)
+	{
+		offspring1[temp]=parent1[temp];
+		offspring2[temp]=parent2[temp];
+		temp++;
+	}
+	while(temp<=crossover_length)
+	{
+		offspring2[temp]=parent1[temp];
+		offspring1[temp]=parent2[temp];
+		temp++;
+	}
+
+	//Unshuffle
+
+}
+
+//To Check
+void uniform_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2)
+{
+	int shuffle1[crossover_length];
+	for(int i=0;i<crossover_length;i++)
+	{
+		int rand_var = rand() % 2;
+		if(rand_var==0)
+		{
+			offspring1[temp]=parent1[temp];
+			offspring2[temp]=parent2[temp];
+		}
+		else if(rand_var==1)
+		{
+			offspring2[temp]=parent1[temp];
+			offspring1[temp]=parent2[temp];
+		}
+	}
+}
+
 // Other Functions 
 
 void check_and_print_results(int *check_array)
@@ -91,7 +211,7 @@ void check_and_print_results(int *check_array)
 
 	for(int i=1;i<=1024;i++)
 	{
-		if(check_array[i]!=0)
+		if(check_array[i]>=1)
 		{
 			count_visited++;
 			count_total += check_array[i];
@@ -123,7 +243,7 @@ void check_history(int *array)
 {
 	int number = 0;
 	number = binary_to_dec(array);
-	
+
 	check_array[number]++;
 
 	return;

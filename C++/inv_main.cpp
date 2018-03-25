@@ -4,47 +4,49 @@
 #include<ctime>
 #include<Eigen/Dense> //Linear Algebra Library
 using namespace std;
-using namespace Eigen; 
+using namespace Eigen;
 
-void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
-void assign_results_old(Eigen::MatrixXd& coeff_mat);
-int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void random_generate_inv(Eigen::VectorXd& array);
-int random_number(int start,int end,int length,int order);
-void random_parents(int *parents_index,int p_length);
 double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
+int check_results(Eigen::VectorXd& array_normal);
+void find_closest_binary(Eigen::VectorXd& array_binary);
+void estimate_binary(Eigen::VectorXd& array_binary);
+void correct_binary(Eigen::VectorXd& array_binary);
+void convert_binary_to_normal(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal);
+void convert_normal_to_binary(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal);
 int is_okay_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,int tolerance);
 double give_value_with_tol(double value, int tolerance, char sign);
 int check_if_close(double to_check,int check_with,int tolerance);
+void change_array_to_whatever(Eigen::VectorXd& array,int index,double value);
+void swap_array_to_whatever(Eigen::VectorXd& array,int index1,double index2);
+int is_okay(Eigen::VectorXd& array);
+void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
+void assign_results_old(Eigen::MatrixXd& coeff_mat);
+int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
+int random_number(int start,int end,int length,int order);
+void random_parents(int *parents_index,int p_length);
+
+void genetic_algo_inv(int length,Eigen::VectorXd& array)
+{
+    Eigen::VectorXd array_test(116);
+	int index[2];
+	index[0]=0;index[1]=0;
+	index[0]=random_number_inv(length);
+	index[1]=index[0]+length;
+	if(index[1]>115)
+		index[1] = index[1] % 115;
+
+	
+}
 
 int main()
 {
-	srand(time(NULL));
 
-	//Load Co-efficient Matrix, Initialize Arrays and Variables
-    Eigen::VectorXd array(116);
-    Eigen::VectorXd array_main(116);
-    Eigen::VectorXd array_test(116);
-    Eigen::VectorXd array_temp(116);
-	
-	Eigen::MatrixXd coeff_mat(116,116);
-	Eigen::MatrixXd inv_coeff_mat(116,116);
-	assign_coeff_mat(coeff_mat);
-	inv_coeff_mat = coeff_mat.inverse();
-
-	Eigen::MatrixXd results_old(116,116); 
-    assign_results_old(results_old);
-
-    random_generate_inv(array);
-
-    double cost=0;
-    cost = cost_full_inv(inv_coeff_mat,array);
-    cout<<"Cost = "<<cost<<endl;
 
 	return 0;
 }
 
-// Changed Functions
+// New Functions
 void random_generate_inv(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
 {
 	srand(time(NULL));
@@ -58,8 +60,6 @@ void random_generate_inv(Eigen::VectorXd& array) //Generates A Random Array whic
 	}
 }
 
-// New Functions
-
 double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array)
 {
 	Eigen::VectorXd array_temp(116);
@@ -70,7 +70,7 @@ double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array)
 	for(int i=1;i<=115;i++)
 	{
         temp_cost=array_temp(i);
-        cout<<temp_cost<<" - ";
+        //cout<<temp_cost<<" - ";
 		if((temp_cost>=0)&&(temp_cost<=1))
 		{
 			if(temp_cost>=0.5)
@@ -83,10 +83,96 @@ double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array)
 		if(temp_cost>1)
 			array_temp(i) = ((temp_cost - 1)*100) * ((temp_cost - 1)*100) * ((temp_cost - 1)*100);
 		temp_cost=array_temp(i);
-        cout<<temp_cost<<endl;
+        //cout<<temp_cost<<endl;
 	}
 	array_temp(0)=0;
 	return array_temp.sum();
+}
+
+int check_results(Eigen::VectorXd& array_normal)
+{
+	Eigen::VectorXd array_binary(116);
+	Eigen::MatrixXd coeff_mat(116,116);
+	Eigen::MatrixXd inv_coeff_mat(116,116);
+	assign_coeff_mat(coeff_mat);
+	inv_coeff_mat = coeff_mat.inverse();
+	array_binary = inv_coeff_mat * array_normal;
+	find_closest_binary(array_binary);
+
+	int cost_result = cost_full(coeff_mat,array_binary);
+	if(cost_result==0)
+		cout<<endl<<"-----0 Cost Found -----"<<endl;
+	return cost_result;
+}
+
+void find_closest_binary(Eigen::VectorXd& array_binary)
+{
+	double temp = 0;
+	for(int i=1;i<=115;i++)
+	{
+		temp = array_binary(i);
+		if(check_if_close(temp,1,3))
+			array_binary(i)=1;
+		else if(check_if_close(temp,0,3))
+			array_binary(i)=0;
+	}
+	if(is_okay(array_binary))
+		return;
+	else
+	{
+		//cout<<"Problem In Array - Couldn't Find Closest Binary Array"<<endl;
+		estimate_binary(array_binary);
+		return;
+	}
+}
+
+void estimate_binary(Eigen::VectorXd& array_binary)
+{
+	double temp = 0;
+	for(int i=1;i<=115;i++)
+	{
+		temp = array_binary(i);
+		if(temp>=0.5)
+			array_binary(i)=1;
+		else if(temp<0.5)
+			array_binary(i)=0;
+	}
+	if(is_okay(array_binary))
+		return;
+	else
+	{
+		//cout<<"Correcting Array :: "<<endl;
+		correct_binary(array_binary);
+	}
+	return;
+}
+
+void correct_binary(Eigen::VectorXd& array_binary)
+{
+	//Correcting Heuristics Goes here
+	cout<<"Corrected"<<endl;
+	return;
+}
+
+void convert_binary_to_normal(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal)
+{
+	Eigen::MatrixXd coeff_mat(116,116);
+	assign_coeff_mat(coeff_mat);
+	array_normal = coeff_mat * array_binary;
+	array_normal(0)=0;
+	return;
+}
+
+void convert_normal_to_binary(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal)
+{
+	Eigen::MatrixXd coeff_mat(116,116);
+	Eigen::MatrixXd inv_coeff_mat(116,116);
+	assign_coeff_mat(coeff_mat);
+	inv_coeff_mat = coeff_mat.inverse();
+
+	array_binary = inv_coeff_mat * array_normal;
+	array_binary(0) = 0; 
+	return;
 }
 
 // 2 - Problem In Array. 1 - Problem in Binary Array. 0 - Okay.
@@ -150,7 +236,42 @@ int check_if_close(double to_check,int check_with,int tolerance)
 		return 0;
 }
 
+void change_array_to_whatever(Eigen::VectorXd& array,int index,double value)
+{
+	array(index)=value;
+	return;
+}
+
+void swap_array_to_whatever(Eigen::VectorXd& array,int index1,double index2)
+{
+	int temp;
+	temp          = array(index1);
+	array(index1) = array(index2);
+	array(index2) = temp;
+	return;
+}
+
 // Same Functions
+
+int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
+{
+	int flag=1,total_ones=0;
+	if(array(1)!=0)
+		flag=0;
+	if(array(115) != 1 - array(94))
+		flag=0;
+	for(int i=2;i<=114;i++)
+	{
+		if(i==94)
+			i++;
+		if(int(array(i))==1)
+			total_ones++;
+	}
+	if(total_ones!=56)
+		flag=0;
+	return flag;
+}
+
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat)
 {
 	FILE* fp;

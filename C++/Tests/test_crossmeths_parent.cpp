@@ -9,27 +9,21 @@ using namespace std;
 
 void choose_parents(int *parents_index);
 int random_number(int start,int end,int order);
-void check_overlap(int *parents_index)
-{
-	int array1[crossover_length];
-	int array2[crossover_length];
-	for(int i=0;i<4;i++)
-	{
-
-	}
-	return;
-}
 
 int main()
 {
 	int parents_index[4];
 
-	for(int i=1;i<=1000000;i++)
+	for(int i=1;i<=10000000;i++)
 	{
 		//cout<<i<<" ";
 		choose_parents(parents_index);
 		if((parents_index[0]>array_length||parents_index[0]<1)||(parents_index[1]>array_length||parents_index[1]<1)||(parents_index[2]>array_length||parents_index[2]<1)||(parents_index[3]>array_length||parents_index[3]<1))
 			cout<<"ERROR OUT OF BOUNDS"<<endl;
+		for(int j=0;j<4;j++)
+			for(int k=0;k<4;k++)
+				if((parents_index[j]==parents_index[k])&&(j!=k))
+					cout<<"OVERLAP ERROR"<<j<<" - "<<k<<endl;
 
 		//check_overlap(parents_index);
 		//cout<<parents_index[0]<<" - "<<parents_index[1]<<" ----- "<<parents_index[2]<<" - "<<parents_index[3]<<endl;
@@ -67,7 +61,7 @@ int random_number(int start,int end,int order)
 	}
 	else if(order == 2)
 	{
-		rand_no = rand() % (array_length - 2*crossover_length + 1);
+		rand_no = rand() % (array_length - 2*crossover_length );
 		rand_no += 1;
 		if(end == 0)
 			end = array_length;

@@ -10,8 +10,8 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 void assign_results_old(Eigen::MatrixXd& coeff_mat);
 void assign_results_new(Eigen::MatrixXd& coeff_mat);
 void random_generate(Eigen::VectorXd& array);
-void change_array_to_whatever(Eigen::VectorXd& array,int index,double value);
-void swap_array_to_whatever(Eigen::VectorXd& array,int index1,double index2);
+void change_array_to_whatever(Eigen::VectorXd& array,int index,double value); //Testing Function
+void swap_array_to_whatever(Eigen::VectorXd& array,int index1,double index2); //Testing Function
 double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
 int is_okay_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,int tolerance);
 int is_okay(Eigen::VectorXd& array);  //Returns 1 if okay 0 if not okay
@@ -20,75 +20,84 @@ double give_value_with_tol(double value, int tolerance, char sign);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void random_generate_inv(Eigen::VectorXd& array); //Generates A Random Array which obeys all the specifications
 void convert_binary_to_normal(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal);
-int check_results(Eigen::VectorXd& array_normal)
-{
-	Eigen::VectorXd array_binary(116);
-	Eigen::MatrixXd coeff_mat(116,116);
-	Eigen::MatrixXd inv_coeff_mat(116,116);
-	assign_coeff_mat(coeff_mat);
-	inv_coeff_mat = coeff_mat.inverse();
-	array_binary = inv_coeff_mat * array_normal;
-	find_closest_binary(array_binary);
+int check_results(Eigen::VectorXd& array_normal);
+void find_closest_binary(Eigen::VectorXd& array_binary);
+void estimate_binary(Eigen::VectorXd& array_binary);
+void correct_binary(Eigen::VectorXd& array_binary);
 
-	int cost_result = cost_full(coeff_mat,array_binary);
-	if(cost_result==0)
-		cout<<endl<<"-----0 Cost Found -----"<<endl;
-	return cost_result;
-}
-void find_closest_binary(Eigen::VectorXd& array_binary)
-{
-	double temp = 0;
-	for(int i=1;i<=115;i++)
-	{
-		temp = array_binary(i);
-		if(check_if_close(temp,1,3))
-			array_binary(i)=1;
-		else if(check_if_close(temp,0,3))
-			array_binary(i)=0;
-	}
-	if(is_okay(array_binary))
-		return;
-	else
-	{
-		cout<<"Problem In Array - Couldn't Find Closest Binary Array"<<endl;
-		estimate_binary(array_binary);
-		return;
-	}
-}
-void estimate_binary(Eigen::VectorXd& array_binary)
-{
-	double temp = 0;
-	for(int i=1;i<=115;i++)
-	{
-		temp = array_binary(i);
-		if(temp>=0.5)
-			array_binary(i)=1;
-		else if(temp<0.5)
-			array_binary(i)=0;
-	}
-	if(is_okay(array_binary))
-		return;
-	else
-	{
-		cout<<"Correcting Array :: "<<endl;
-		correct_binary(array_binary);
-	}
-}
-void correct_binary(Eigen::VectorXd& array_binary)
-{
-	cout<<"Corrected"<<endl;
-	return;
-}
 void genetic_algo_inv(int length,Eigen::VectorXd& array)
 {
 
-    Eigen::VectorXd array_test(116);
+    Eigen::VectorXd array_temp(116);
+
 	int index[2];
 	index[0]=0;index[1]=0;
-	index[0]=random_number_inv(length);
+	index[0]=random_number_inv();
 	index[1]=index[0]+length;
+	if(index[1]>115)
+		index[1] = index[1] % 115;
 
+	int parent[length];
+	int offspring[length];
 
+	copy_parent_from_array(array,parent,index,length);
+	random_shuffle(parent,offspring,length);
+	copy_offspring_to_array(array_temp,offspring,index,length);
+
+	int cost_before = (array);
+	int cost_after = (array_temp);
+
+	if(cost_after<cost_before)
+		array = array_temp;
+
+}
+
+int random_number_inv()
+{
+	int rand_no = rand() % 115;
+	rand_no++;
+}
+
+void copy_parent_from_array(Eigen::VectorXd& array,int *parent,int *index,int length)
+{
+	int temp = index[0];
+	for(int i=1;i<=length;i++)
+	{
+		if(temp>115)
+			temp = 1;
+		parent[i-1]=array(temp);
+		temp++;
+	}
+}
+
+void copy_offspring_to_array(Eigen::VectorXd& array_temp,int *offspring,int *index,int length)
+{
+	int temp = index[0];
+	for(int i=1;i<=length;i++)
+	{
+		if(temp>115)
+			temp = 1;
+		array_temp(temp)=offspring[i-1];
+		temp++;
+	}
+}
+
+void random_shuffle(int *parent,int *offspring,int length)
+{
+	int rand_val,rand_sign;
+	for(int i=0;i<length;i++)
+	{
+		rand_val = rand % 5;
+		rand_sign = rand() % 2;
+		if(rand_sign==0)
+			rand_sign=-1;
+		offspring[i] = parent[i] + rand_sign * rand_val;
+
+		if(offspring[i]<57)
+			offspring=57;
+		else if(offspring[i]>72)
+			offspring=72;
+	}
 }
 
 
@@ -205,6 +214,67 @@ int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
 		flag=0;
 	return flag;
 }
+
+int check_results(Eigen::VectorXd& array_normal)
+{
+	Eigen::VectorXd array_binary(116);
+	Eigen::MatrixXd coeff_mat(116,116);
+	Eigen::MatrixXd inv_coeff_mat(116,116);
+	assign_coeff_mat(coeff_mat);
+	inv_coeff_mat = coeff_mat.inverse();
+	array_binary = inv_coeff_mat * array_normal;
+	find_closest_binary(array_binary);
+
+	int cost_result = cost_full(coeff_mat,array_binary);
+	if(cost_result==0)
+		cout<<endl<<"-----0 Cost Found -----"<<endl;
+	return cost_result;
+}
+void find_closest_binary(Eigen::VectorXd& array_binary)
+{
+	double temp = 0;
+	for(int i=1;i<=115;i++)
+	{
+		temp = array_binary(i);
+		if(check_if_close(temp,1,3))
+			array_binary(i)=1;
+		else if(check_if_close(temp,0,3))
+			array_binary(i)=0;
+	}
+	if(is_okay(array_binary))
+		return;
+	else
+	{
+		cout<<"Problem In Array - Couldn't Find Closest Binary Array"<<endl;
+		estimate_binary(array_binary);
+		return;
+	}
+}
+void estimate_binary(Eigen::VectorXd& array_binary)
+{
+	double temp = 0;
+	for(int i=1;i<=115;i++)
+	{
+		temp = array_binary(i);
+		if(temp>=0.5)
+			array_binary(i)=1;
+		else if(temp<0.5)
+			array_binary(i)=0;
+	}
+	if(is_okay(array_binary))
+		return;
+	else
+	{
+		cout<<"Correcting Array :: "<<endl;
+		correct_binary(array_binary);
+	}
+}
+void correct_binary(Eigen::VectorXd& array_binary)
+{
+	cout<<"Corrected"<<endl;
+	return;
+}
+
 void convert_binary_to_normal(Eigen::VectorXd& array_binary,Eigen::VectorXd& array_normal)
 {
 	Eigen::MatrixXd coeff_mat(116,116);

@@ -39,13 +39,14 @@ void check_array_integrity(int *array);
 void one_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
 void k_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
 void shuffle_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
+void uniform_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2);
 
 int main()
 {
 	int array[array_length+1];
 	double total_results=0;
 	
-	for(int j=4;j<=6;j++)
+	for(int j=1;j<=6;j++)
 	{
 		level_limit = j;
 		for(int i=1;i<=10000;i++)
@@ -63,8 +64,6 @@ int main()
 
 	return 0;
 }
-
-void 
 
 // All types of Crossover Reproduction Functions
 
@@ -120,10 +119,10 @@ void k_point_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2
 		rand_var = rand() % (end-start);
 		rand_var+=start;
 
-		crossover[i] = rand_start;
+		crossover[i] = rand_var;
 	}
 
-	temp = crossover[0];
+	int temp = crossover[0];
 	pointer = 0;
 	for(int i=0;i<=crossover_length;i++)
 	{
@@ -182,11 +181,10 @@ void shuffle_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2
 
 }
 
-//To Check
 void uniform_crossover(int *parent1,int *parent2,int *offspring1,int *offspring2)
 {
 	int shuffle1[crossover_length];
-	for(int i=0;i<crossover_length;i++)
+	for(int temp=0;temp<crossover_length;temp++)
 	{
 		int rand_var = rand() % 2;
 		if(rand_var==0)
@@ -275,7 +273,11 @@ void apply_crossover(int *array)
 	{
 		case 1 : one_point_crossover(parent1,parent2,offspring1,offspring2);
 				break;
-		case 2 : one_point_crossover(parent1,parent2,offspring1,offspring2);
+		case 2 : k_point_crossover(parent1,parent2,offspring1,offspring2);
+				break;
+		case 3 : shuffle_crossover(parent1,parent2,offspring1,offspring2);
+				break;
+		case 4 : uniform_crossover(parent1,parent2,offspring1,offspring2);
 				break;
 	}
 
@@ -313,7 +315,7 @@ int random_number(int start,int end,int order)
 	}
 	else if(order == 2)
 	{
-		rand_no = rand() % (array_length - 2*crossover_length + 1);
+		rand_no = rand() % (array_length - 2*crossover_length);
 		rand_no += 1;
 		if(end == 0)
 			end = array_length;

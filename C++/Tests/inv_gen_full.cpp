@@ -9,6 +9,7 @@ using namespace Eigen;
 
     int num_arr = 10; //Number of Arrays in the Pool
     int overlap_len = 5;
+    double mutation_probablity = 0.1;
 
 int cost_full(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);  //Returns 1 if okay 0 if not okay
@@ -31,6 +32,8 @@ void cost_init_gen(Eigen::MatrixXd& inv_coeff_mat,double *cost_array,Eigen::Matr
 int random_number(int start,int end,int length,int order);
 void random_parents(int *parents_index,int p_length);
 void print_cost_all_arrays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays);
+int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
+void mutate_arr_at_loc(Eigen::VectorXd& array, int position);
 
 
 int main()
@@ -55,7 +58,7 @@ int main()
         step_genetic(inv_coeff_mat,arrays);
         count++;
 
-        if(count%1==0)
+        if(count%1000==0)
         {
             print_cost_all_arrays(inv_coeff_mat,arrays);    
         }
@@ -103,6 +106,7 @@ void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
 
     for(int i=0;i<pair_no;i++)
     {
+        //cout<<"Pair Number == "<<i<<endl;
         flag1 = 0;
         flag2 = 0;
         temp = pairs[i]; 
@@ -113,7 +117,15 @@ void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
 
         new_cost[0]=cost_analyze(inv_coeff_mat,array_off);
         new_cost[1]=cost_analyze(inv_coeff_mat,array_off_2);
-        //cout<<new_cost[0]<<" - "<<new_cost[1]<<endl;
+        //cout<<"New Costs"<<new_cost[0]<<" - "<<new_cost[1]<<endl;
+
+        for(int j=1;j<=num_arr;j++)
+        {
+            if(new_cost[0]==cost_array[j])
+                flag1=1;
+            if(new_cost[1]==cost_array[j])
+                flag2=1;
+        }
 
         for(int j=1;j<=num_arr;j++)
         {
@@ -122,14 +134,19 @@ void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
                 for(int k=1;k<=115;k++)
                     arrays(j,k)=array_off(k);
                 flag1=1;
+                //cout<<"Change 1 at "<<j<<endl;
+                continue;
             }
-            else if((cost_array[j]>new_cost[1])&&(flag2==0))
+            if((cost_array[j]>new_cost[1])&&(flag2==0))
             {
                 for(int k=1;k<=115;k++)
                     arrays(j,k)=array_off_2(k);
                 flag2=1;
+                //cout<<"Change 2 at "<<j<<endl;
             }
         }
+
+        //cout<<"Pair Number END == "<<i<<endl<<endl;
     }
 
     //print_cost_all_arrays(inv_coeff_mat,arrays);
@@ -170,7 +187,56 @@ void genetic_algo_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,Eige
         array_off_2(pointer) = temp;
         pointer++;
     }
+
+    // Mutation 
+    for(int i=0;i<=115;i++)
+    {
+        double p1 = rand() / (double)RAND_MAX;
+        double p2 = rand() / (double)RAND_MAX;
+
+        if(p1 < mutation_probablity)
+            mutate_arr_at_loc(array_off,i);
+        if(p2 < mutation_probablity)
+            mutate_arr_at_loc(array_off_2,i);
+    }
+    
+    if(check_similar_arrays(array,array_off)||check_similar_arrays(array_2,array_off_2))
+        cout<<" PROBLEM ARRAY NOT CHANGING "<<endl;
+
     return;
+}
+
+void mutate_arr_at_loc(Eigen::VectorXd& array, int position)
+{
+    int rand_val_max = 5;
+    int rand_val = rand() % rand_val_max + 1;
+    int rand_dir = rand() % 2;
+    if(rand_dir==0)
+        rand_dir--;
+        
+    int temp = temp + rand_dir * rand_val;
+    if(temp<57)
+        temp = 57;
+    else if(temp>72)
+        temp = 72;
+    array(position) = temp;
+
+    return;
+}
+
+int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2)
+{
+    int flag = 1;
+
+    for(int i=0; i<=115; i++)
+    {
+        if(array(i)==array_2(i))
+        {
+            flag = 0;
+            break;
+        }
+    }
+    return flag;
 }
 
 int random_number(int start,int end,int length,int order)

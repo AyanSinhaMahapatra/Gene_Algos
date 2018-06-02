@@ -7,6 +7,9 @@
 using namespace std;
 using namespace Eigen; 
 
+    int num_arr = 10; //Number of Arrays in the Pool
+    int overlap_len = 5;
+
 int cost_full(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);  //Returns 1 if okay 0 if not okay
 void estimate_binary(Eigen::VectorXd& array_binary);
@@ -19,56 +22,276 @@ void random_generate_inv(Eigen::VectorXd& array);
 double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
 double cost_analyze(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
 int random_number_inv();
-void genetic_algo_inv(int length,Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
+void random_generate_inv_arrays(Eigen::MatrixXd& arrays);
+void genetic_algo_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+    Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2);
+void create_random_pairs(int *pairs);
+void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays);
+void cost_init_gen(Eigen::MatrixXd& inv_coeff_mat,double *cost_array,Eigen::MatrixXd& arrays);
+int random_number(int start,int end,int length,int order);
+void random_parents(int *parents_index,int p_length);
+void print_cost_all_arrays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays);
+
+
 int main()
 {
-    double lowest_cost = 100;
-    double cost_hold = 0;
-    double cost_hold_check = 0;
+    srand(time(0));
     int count = 0;
-    Eigen::VectorXd array(116);
-    
     Eigen::MatrixXd coeff_mat(116,116);
     Eigen::MatrixXd inv_coeff_mat(116,116);
     assign_coeff_mat(coeff_mat);
     inv_coeff_mat = coeff_mat.inverse();
-    //cout<<"Random Generated Array == "<<is_okay_inv(inv_coeff_mat,array,4)<<endl;
+
+    Eigen::MatrixXd arrays(num_arr+1,116);
+    Eigen::VectorXd array(116);
+
+    random_generate_inv_arrays(arrays);
+    print_cost_all_arrays(inv_coeff_mat,arrays);
+
+    cout<<"Starts"<<endl;
 
     while(1)
     {
-        random_generate_inv(array);
-        //cout<<"------------------------------------------------------------------------"<<endl;
-        while(1)
-        {
-            count++;
-            genetic_algo_inv(10,inv_coeff_mat,array);
-            //genetic_algo_inv(20,inv_coeff_mat,array);
-            if(count%100000==0)
-            {
-                //cout<<count<<endl;
-                cost_hold_check = cost_hold;
-                cost_hold = cost_analyze(inv_coeff_mat,array); 
-                //cout<<"Analyze cost "<<cost_hold<<endl;
-                //cout<<"Is_okay? -- "<<is_okay_inv(inv_coeff_mat,array,4)<<endl;
-                if(cost_hold==cost_hold_check)
-                {
-                    
-                    if(cost_full_inv(inv_coeff_mat,array)==0)
-                        return 0;
+        step_genetic(inv_coeff_mat,arrays);
+        count++;
 
-                    //cout<<"Is_okay? -- "<<is_okay_inv(inv_coeff_mat,array,4)<<endl;
-                    if(cost_hold<lowest_cost)
-                    {
-                        lowest_cost=cost_hold;
-                        cout<<" Cost Holder    "<<lowest_cost<<"-----"<<cost_hold<<endl;
-                    }
-                    break;
-                }
+        if(count%1==0)
+        {
+            print_cost_all_arrays(inv_coeff_mat,arrays);    
+        }
+        //cout<<"Step Main"<<endl;
+    }
+    
+    return 0;
+}
+
+void print_cost_all_arrays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
+{
+    Eigen::VectorXd array(116);
+
+    for(int i=1;i<=num_arr;i++)
+    {
+        array = arrays.row(i);
+        //cout<<array<<endl<<"-------------------"<<endl;
+        cout<<cost_analyze(inv_coeff_mat,array)<<"  ";
+    }
+    cout<<endl<<endl;
+
+    return;
+}
+
+void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
+{
+    int pair_no = num_arr/2;
+    int pairs[pair_no];
+    int temp=0;
+    int flag1=0;
+    int flag2=0;
+
+    create_random_pairs(pairs);
+
+    Eigen::VectorXd array(116);
+    Eigen::VectorXd array_2(116);
+
+    Eigen::VectorXd array_off(116);
+    Eigen::VectorXd array_off_2(116);
+
+    double cost_array[num_arr+1];
+    double new_cost[2];
+
+    cost_init_gen(inv_coeff_mat,cost_array,arrays);
+
+    for(int i=0;i<pair_no;i++)
+    {
+        flag1 = 0;
+        flag2 = 0;
+        temp = pairs[i]; 
+        array = arrays.row(temp);
+        array_2 = arrays.row(i+pair_no);
+
+        genetic_algo_inv(inv_coeff_mat,array,array_2,array_off,array_off_2);
+
+        new_cost[0]=cost_analyze(inv_coeff_mat,array_off);
+        new_cost[1]=cost_analyze(inv_coeff_mat,array_off_2);
+        //cout<<new_cost[0]<<" - "<<new_cost[1]<<endl;
+
+        for(int j=1;j<=num_arr;j++)
+        {
+            if((cost_array[j]>new_cost[0])&&(flag1==0))
+            {
+                for(int k=1;k<=115;k++)
+                    arrays(j,k)=array_off(k);
+                flag1=1;
+            }
+            else if((cost_array[j]>new_cost[1])&&(flag2==0))
+            {
+                for(int k=1;k<=115;k++)
+                    arrays(j,k)=array_off_2(k);
+                flag2=1;
             }
         }
     }
 
-    return 0;
+    //print_cost_all_arrays(inv_coeff_mat,arrays);
+
+    return;
+}
+
+void genetic_algo_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+    Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2)
+{
+    int parents_index[4];
+    int temp=0;
+
+    array_off = array;
+    array_off_2 = array_2;
+    
+    random_parents(parents_index,overlap_len);
+    //cout<<parents_index[0]<<"  "<<parents_index[1]<<"  "<<parents_index[2]<<"  "<<parents_index[3]<<"  "<<endl;
+
+    int pointer = parents_index[0];
+    while(pointer!=(parents_index[1]+1))
+    {
+        if(pointer == 116)
+            pointer = 1;
+        temp = array_off(pointer);
+        array_off(pointer) = array_off_2(pointer);
+        array_off_2(pointer) = temp;
+        pointer++;
+    }
+
+    pointer = parents_index[2];
+    while(pointer!=(parents_index[3]+1))
+    {
+        if(pointer == 116)
+            pointer = 1;
+        temp = array_off(pointer);
+        array_off(pointer) = array_off_2(pointer);
+        array_off_2(pointer) = temp;
+        pointer++;
+    }
+    return;
+}
+
+int random_number(int start,int end,int length,int order)
+{
+    int rand_no =0;
+    int rand_range =0;
+
+    if(start>end)
+        rand_range = (116-start) + (end-1);
+    else
+        rand_range = end-start;
+    if(order==2)
+        rand_range = rand_range - length ;
+
+    rand_no = rand() % rand_range;
+    rand_no = rand_no + start;  
+
+    if(rand_no>115)
+        rand_no = 1 + rand_no % 115;
+
+    return rand_no;
+}
+
+void random_parents(int *parents_index,int p_length)
+{
+    //Parent 1
+    int p1_start = random_number(1,115,p_length,1);
+    
+    int p1_end = p1_start + p_length - 1;
+
+    if(p1_end>115)
+        p1_end = p1_end % 115;
+    //Parent 2
+    int p2_start = random_number(p1_end+1,p1_start-1,p_length,2);
+
+    int p2_end = p2_start + p_length - 1;
+
+    if(p2_end>115)
+        p2_end = p2_end % 115;
+
+    parents_index[0] = p1_start;
+    parents_index[1] = p1_end;
+    parents_index[2] = p2_start;
+    parents_index[3] = p2_end;
+
+    return;
+}
+
+void cost_init_gen(Eigen::MatrixXd& inv_coeff_mat,double *cost_array,Eigen::MatrixXd& arrays)
+{
+    Eigen::VectorXd array(116);
+
+    for(int i=1;i<=num_arr;i++)
+    {
+        array = arrays.row(i);
+        cost_array[i] = cost_analyze(inv_coeff_mat,array);
+    }
+
+    return;
+}
+
+void random_generate_inv_arrays(Eigen::MatrixXd& arrays)
+{
+    Eigen::VectorXd array(116);
+
+    for(int i=1;i<=num_arr;i++)
+    {
+        random_generate_inv(array);
+        arrays(i,0)=0;
+        for(int j=1;j<=115;j++)
+        {
+            arrays(i,j)=array(j);
+        }
+    }
+
+    return;
+}
+
+void random_generate_inv(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
+{
+    array.fill(0);
+    int rand_gen=0;
+    for(int i=1;i<=115;i++)
+    {
+        rand_gen = rand() % 8;
+        rand_gen +=60;
+        array(i)=rand_gen;
+    }
+
+    return;
+}
+
+void create_random_pairs(int *pairs)
+{
+    int pair_no = num_arr/2;
+    int rand_no = 0;
+    int flag = 1;
+
+    for(int j=0;j<pair_no;j++)
+        pairs[j]=0;
+
+    for(int i=0;i<pair_no;i++)
+    {
+        while(1)
+        {
+            flag = 1;
+            rand_no = rand()%pair_no + 1;
+            for(int j=0;j<pair_no;j++)
+            {    
+                if(pairs[j]==rand_no)
+                    flag = 0;
+            }
+            if(flag==1)
+            { 
+                pairs[i]=rand_no;
+                break;
+            }
+        }
+    }
+
+    return;
 }
 
 int cost_full(Eigen::VectorXd& array)
@@ -139,6 +362,7 @@ void estimate_binary(Eigen::VectorXd& array_binary)
         cout<<"Correcting Array :: "<<endl;
         correct_binary(array_binary);
     }
+    return;
 }
 double give_value_with_tol(double value, int tolerance, char sign)
 {
@@ -262,19 +486,9 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat)
         }
     }
     //cout<<"Number of Characters == "<<count<<endl;
+    return;
 }
-void random_generate_inv(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
-{
-    srand(time(NULL));
-    array.fill(0);
-    int rand_gen=0;
-    for(int i=1;i<=115;i++)
-    {
-        rand_gen = rand() % 8;
-        rand_gen +=60;
-        array(i)=rand_gen;
-    }
-}
+
 double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array)
 {
     Eigen::VectorXd array_temp(116);
@@ -382,49 +596,4 @@ int random_number_inv()
     rand_no = rand() % 115;
     rand_no +=1;
     return rand_no;
-}
-void genetic_algo_inv(int length,Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array)
-{
-    double cost_prev=0;
-    double cost_after=0;
-    int temp=0;
-    int index[2];
-    int rand_val_max = length/2;
-    Eigen::VectorXd array_test(116);
-
-    array_test = array;
-    cost_prev = cost_analyze(inv_coeff_mat,array_test);
-    index[0]=0;index[1]=0;
-    index[0]=random_number_inv();
-    index[1]=index[0]+length-1;
-    if(index[1]>115)
-        index[1]=index[1]-115;
-    int trav = index[0];
-    while(trav!=(index[1]+1))
-    {
-        if(trav>115)
-            trav=1;
-        temp = array_test(trav);
-        int rand_val = rand() % rand_val_max + 1;
-        int rand_dir = rand() % 2;
-        if(rand_dir==0)
-            rand_dir--;
-        int rand_gate = rand() % 2  ;
-        
-        temp = temp + rand_gate * rand_dir * rand_val;
-        if(temp<57)
-            temp = 57;
-        else if(temp>72)
-            temp = 72;
-        array_test(trav)=temp;
-        trav++;
-    }
-    cost_after = cost_analyze(inv_coeff_mat,array_test);
-
-    if(cost_after<cost_prev)
-    {    
-        array=array_test;
-        //cout<<"Cost == "<<cost_after<<endl;
-    }
-    return;
 }

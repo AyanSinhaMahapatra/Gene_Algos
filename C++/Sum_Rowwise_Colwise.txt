@@ -25,3 +25,13 @@ Average Cost On First Swap == 54
 Swaps Performed == 6272
 Highest First Swap Cost == 422
 Lowest First Swap Cost == 6
+
+Result Of Average And Variance of Costs of Already found results:- 
+64.4609 5.17656
+Cost == 0
+64.4609 5.18594
+Cost == 0
+64.4087 5.26442
+Cost == 0
+64.4609 5.28227
+Cost == 0

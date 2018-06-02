@@ -3,6 +3,8 @@
 #include<algorithm>
 #include<ctime>
 using namespace std;
+
+/*
 int random_number(int start,int end,int length,int order)
 {
 	//srand(time(NULL));
@@ -52,6 +54,7 @@ void random_parents(int *parents_index,int p_length)
 	parents_index[2] = p2_start;
 	parents_index[3] = p2_end;
 }
+
 int main()
 {
 	srand(time(NULL));
@@ -133,5 +136,80 @@ int main()
 		}
 	}
 	cout<<i<<endl<<"94 - "<<count94<<endl<<"115 - "<<count115<<endl;
+	return 0;
+}
+
+*/
+
+int random_number(int start,int end,int length,int order)
+{
+    //srand(time(NULL));
+    int rand_no =0;
+    int rand_range =0;
+
+    if(start>end)
+        rand_range = (116-start) + (end-1);
+    else
+        rand_range = end-start;
+    if(order==2)
+        rand_range = rand_range - length ;
+
+    rand_no = rand() % rand_range;
+    rand_no = rand_no + start;  
+
+    if(rand_no>115)
+        rand_no = 1 + rand_no % 115;
+
+    return rand_no;
+}
+
+void random_parents(int *parents_index,int p_length)
+{
+    //Parent 1
+    int p1_start = random_number(1,115,p_length,1);
+    
+    int p1_end = p1_start + p_length - 1;
+
+    if(p1_end>115)
+        p1_end = p1_end % 115;
+    //Parent 2
+    int p2_start = random_number(p1_end+1,p1_start-1,p_length,2);
+
+    int p2_end = p2_start + p_length - 1;
+
+    if(p2_end>115)
+        p2_end = p2_end % 115;
+
+    parents_index[0] = p1_start;
+    parents_index[1] = p1_end;
+    parents_index[2] = p2_start;
+    parents_index[3] = p2_end;
+}
+
+int main()
+{
+	srand(time(NULL));
+	int parents_index[4];
+	int i=0,count115=0,count94=0;
+	for(i=0;i<=10000000;i++)
+	{
+		random_parents(parents_index,10);
+
+		for(int j=0;j<4;j++)
+			if((parents_index[j]>115)||(parents_index[j]<1))
+				cout<<"Outside Scope"<<endl;
+
+		parents_index[0] = (parents_index[0] + 9)%115;
+		parents_index[2] = (parents_index[2] + 9)%115;
+
+		if(parents_index[0]==0)
+			parents_index[0]=115;
+		else if(parents_index[2]==0)
+			parents_index[2]=115;
+
+		if((parents_index[2]!=parents_index[3])||(parents_index[0]!=parents_index[1]))
+			cout<<"Not Macthing "<<parents_index[0]<<" "<<parents_index[1]<<" "<<parents_index[2]<<" "<<parents_index[3]<<" "<<endl;
+
+	}
 	return 0;
 }

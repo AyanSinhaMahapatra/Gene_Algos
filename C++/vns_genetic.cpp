@@ -814,9 +814,15 @@ int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
 {
 	int flag=1,total_ones=0;
 	if(array(1)!=0)
+	{
 		flag=0;
+		cout<<"Problem 1"<<endl;
+	}
 	if(array(115) != 1 - array(94))
+	{
 		flag=0;
+		cout<<"Problem 2"<<endl;
+	}
 	for(int i=2;i<=114;i++)
 	{
 		if(i==94)
@@ -825,7 +831,10 @@ int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
 			total_ones++;
 	}
 	if(total_ones!=56)
+	{
 		flag=0;
+		cout<<"Problem 3"<<endl;
+	}
 	return flag;
 }
 

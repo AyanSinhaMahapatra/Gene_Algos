@@ -34,6 +34,10 @@ void random_parents(int *parents_index,int p_length);
 void print_cost_all_arrays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays);
 int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
 void mutate_arr_at_loc(Eigen::VectorXd& array, int position);
+void assign_result_arrays(Eigen::VectorXd& array);
+void convert_binary_to_array(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_binary);
+void assign_results_old(Eigen::MatrixXd& results_old_mat);
+void assign_four_arays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays,Eigen::MatrixXd& results_old_mat);
 
 
 int main()
@@ -45,10 +49,15 @@ int main()
     assign_coeff_mat(coeff_mat);
     inv_coeff_mat = coeff_mat.inverse();
 
+    Eigen::MatrixXd results_old(116,116); 
+    assign_results_old(results_old);
+
     Eigen::MatrixXd arrays(num_arr+1,116);
-    Eigen::VectorXd array(116);
 
     random_generate_inv_arrays(arrays);
+
+    assign_four_arays(inv_coeff_mat,coeff_mat,arrays,results_old);
+
     print_cost_all_arrays(inv_coeff_mat,arrays);
 
     cout<<"Starts"<<endl;
@@ -58,7 +67,7 @@ int main()
         step_genetic(inv_coeff_mat,arrays);
         count++;
 
-        if(count%100000==0)
+        if(count%1000==0)
         {
             print_cost_all_arrays(inv_coeff_mat,arrays);    
         }
@@ -81,6 +90,32 @@ void print_cost_all_arrays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& array
     cout<<endl<<endl;
 
     return;
+}
+
+void assign_four_arays(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays,Eigen::MatrixXd& results_old_mat)
+{
+    Eigen::VectorXd array(116);
+    Eigen::VectorXd array_2(116);
+
+    for(int i=1;i<=4;i++)
+    {
+        array = results_old_mat.row(i);
+
+        convert_binary_to_array(coeff_mat,array_2,array);
+
+        cout<<"Cost == "<<cost_analyze(inv_coeff_mat,array_2)<<"  ";
+        //cout<<array_2<<endl;
+        arrays(i,0)=0;
+        for(int j=1;j<=115;j++)
+        {
+            arrays(i,j)=array_2(j);
+        }
+    }
+}
+
+void convert_binary_to_array(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_binary)
+{
+    array = coeff_mat * array_binary;
 }
 
 void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
@@ -662,4 +697,75 @@ int random_number_inv()
     rand_no = rand() % 115;
     rand_no +=1;
     return rand_no;
+}
+
+void assign_result_arrays(Eigen::VectorXd& array)
+{
+    array.fill(0);
+    FILE* fp;
+    fp = fopen("already_Found_results.txt","r");
+    int count=0;
+    char ch;
+    int flag = 1;
+    int columns=1;
+    int rows=1;
+    while(flag)
+    {
+        ch=fgetc(fp);
+        if(ch==EOF||rows==2)
+        {
+            flag=0;
+            continue;
+        }
+        else if(ch!='\n')
+        {
+            int temp;
+            temp=ch;
+            temp-=48;
+            array(columns)=temp;
+        }
+        count++;
+        columns++;
+        if(columns==116)
+        {
+            ch=fgetc(fp);
+            columns=1;
+            rows++;
+        }
+    }
+}
+
+void assign_results_old(Eigen::MatrixXd& results_old_mat)
+{
+    FILE* fp;
+    fp = fopen("already_Found_results.txt","r");
+    int count=0;
+    char ch;
+    int flag = 1;
+    int rows=1,columns=1;
+    while(flag)
+    {
+        ch=fgetc(fp);
+        if(ch==EOF||rows==116)
+        {
+            flag=0;
+            continue;
+        }
+        if(ch!='\n')
+        {
+            int temp;
+            temp=ch;
+            temp-=48;
+            results_old_mat(rows,columns)=temp;
+        }
+        count++;
+        columns++;
+        if(columns==116)
+        {
+            ch=fgetc(fp);
+            columns=1;
+            rows++;
+        }
+    }
+    //cout<<"Number of Characters == "<<count<<endl;
 }

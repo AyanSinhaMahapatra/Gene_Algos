@@ -63,7 +63,7 @@ void print_vns(int flag_random,int flag_neigh,int flag_tren,int flag_shake,int r
 void swap_fixed_pos(Eigen::VectorXd& array);
 void try_swap_fixed(Eigen::VectorXd& array,Eigen::MatrixXd& coeff_mat);
 void assign_results_new(Eigen::MatrixXd& coeff_mat);
-void assign_results_old(Eigen::MatrixXd& coeff_mat);
+void assign_results_old(Eigen::MatrixXd& results_old_mat);
 void try_difference(Eigen::VectorXd& array,Eigen::MatrixXd& results);
 
 int main()
@@ -510,7 +510,7 @@ void assign_results_new(Eigen::MatrixXd& coeff_mat)
     //cout<<"Number of Characters == "<<count<<endl;
 }
 
-void assign_results_old(Eigen::MatrixXd& coeff_mat)
+void assign_results_old(Eigen::MatrixXd& results_old_mat)
 {
     FILE* fp;
     fp = fopen("already_Found_results.txt","r");
@@ -531,7 +531,7 @@ void assign_results_old(Eigen::MatrixXd& coeff_mat)
             int temp;
             temp=ch;
             temp-=48;
-            coeff_mat(rows,columns)=temp;
+            results_old_mat(rows,columns)=temp;
         }
         count++;
         columns++;

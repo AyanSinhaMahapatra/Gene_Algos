@@ -18,6 +18,7 @@ using namespace Eigen;
 
     int num_arr = 10; //Number of Arrays in the Pool
     double mutation_probablity = 0.1;
+    double prob_swap = 0.02;
 
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
@@ -25,11 +26,14 @@ void random_generate(Eigen::VectorXd& array);
 int is_okay(Eigen::VectorXd& array);
 void assign_results_new(Eigen::MatrixXd& coeff_mat);
 void assign_results_old(Eigen::MatrixXd& coeff_mat);
-void random_generate_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays,int *cost_array);
+void random_generate_arrays(Eigen::MatrixXd& arrays);
 void create_random_pairs(int *pairs);
 void cost_init_gen(Eigen::MatrixXd& coeff_mat,double *cost_array,Eigen::MatrixXd& arrays);
-void genetic_algo_inv(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2);
+int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
+void print_cost_all_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
+void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
 
 int main()
 {
@@ -37,21 +41,25 @@ int main()
     int pair_no = num_arr/2;
     int pairs[pair_no];
     int flag = 1;
+    int count = 0;
 
     srand(time(NULL));
 
     //Load Co-efficient Matrix, Initialize Arrays and Variables
     Eigen::MatrixXd coeff_mat(116,116);
-    Eigen::MatrixXd arrays(num_arr,116);
+    Eigen::MatrixXd arrays(num_arr+1,116);
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_main(116);
 
     assign_coeff_mat(coeff_mat);
 
-    random_generate_arrays(coeff_mat,arrays,cost_array);
+    random_generate_arrays(arrays);
+
+    print_cost_all_arrays(coeff_mat,arrays);
 
     cout<<"Starts"<<endl;
 
+    
     while(1)
     {
         step_genetic(coeff_mat,arrays);
@@ -95,7 +103,7 @@ void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
         array = arrays.row(temp);
         array_2 = arrays.row(i+pair_no);
 
-        genetic_algo_inv(coeff_mat,array,array_2,array_off,array_off_2);
+        genetic_algo(array,array_2,array_off,array_off_2);
 
         new_cost[0]=cost_full(coeff_mat,array_off);
         new_cost[1]=cost_full(coeff_mat,array_off_2);
@@ -128,7 +136,7 @@ void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
     return;
 }
 
-void genetic_algo_inv(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2)
 {
     array_off = array;
@@ -139,9 +147,14 @@ void genetic_algo_inv(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::V
 
     int place_1 = 1;
     int place_2 = 1;
-    for(int i=1;i<=115;i++)
+
+    int temp_swap;
+
+    
+
+    for(int i=2;i<=114;i++)
     {
-        if(array(i)!=array_2(i))
+        if((array(i)!=array_2(i))&&(i!=94))
         {
             if(array(i)==1)
             {
@@ -156,24 +169,56 @@ void genetic_algo_inv(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array,Eigen::V
         }
     }
 
+    if(place_1!=place_2)
+        cout<<"ERROR DIFF"<<endl;
 
-
-    // Mutation 
-    for(int i=0;i<=115;i++)
+    for(int i=1;i<=place_1;i++)
     {
-        double p1 = rand() / (double)RAND_MAX;
-        double p2 = rand() / (double)RAND_MAX;
+        double p = rand() / (double)RAND_MAX;
 
-        if(p1 < mutation_probablity)
-            mutate_arr_at_loc(array_off,i);
-        if(p2 < mutation_probablity)
-            mutate_arr_at_loc(array_off_2,i);
+        if(p<prob_swap)
+        {
+            temp_swap = array_diff_1at1[i];
+            array_diff_1at1[i] = array_diff_1at2[i];
+            array_diff_1at2[i] = temp_swap;
+        }
     }
+     
+    for(int i=1;i<=place_1;i++)
+    {
+        temp_swap = array_diff_1at1[i];
+        array_off[temp_swap] = 1;
+        array_off_2[temp_swap] = 0;
+
+        temp_swap = array_diff_1at2[i];
+        array_off[temp_swap] = 0;
+        array_off_2[temp_swap] = 1;
+    }
+
+    // Mutation
     
     if(check_similar_arrays(array,array_off)||check_similar_arrays(array_2,array_off_2))
         cout<<" PROBLEM ARRAY NOT CHANGING "<<endl;
 
+    if((is_okay(array_off)==0)||(is_okay(array_off_2)==0))
+        cout<< " ERROR ARRAY NOT OKAY" <<endl;
+
     return;
+}
+
+int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2)
+{
+    int flag = 1;
+
+    for(int i=0; i<=115; i++)
+    {
+        if(array(i)==array_2(i))
+        {
+            flag = 0;
+            break;
+        }
+    }
+    return flag;
 }
 
 void cost_init_gen(Eigen::MatrixXd& coeff_mat,double *cost_array,Eigen::MatrixXd& arrays)
@@ -189,6 +234,7 @@ void cost_init_gen(Eigen::MatrixXd& coeff_mat,double *cost_array,Eigen::MatrixXd
     return;
 }
 
+// ToDo Merge above and below function
 
 void print_cost_all_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
 {
@@ -235,7 +281,7 @@ void create_random_pairs(int *pairs)
     }
 }
 
-void random_generate_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays,int *cost_array)
+void random_generate_arrays(Eigen::MatrixXd& arrays)
 {
     Eigen::VectorXd array(116);
     arrays.fill(0);
@@ -250,13 +296,7 @@ void random_generate_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays,i
         array = arrays.row(i);
         //cout<<is_okay(array)<<endl;
     }
-
-    for(int i=0;i<num_arr;i++)
-    {
-        array = arrays.row(i);
-        cost_array[i]=cost_full(coeff_mat,array);
-        //cout<<cost_array[i]<<endl;
-    }
+    return;
 }
 
 int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay

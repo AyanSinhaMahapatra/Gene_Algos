@@ -24,7 +24,7 @@ double cost_full_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
 double cost_analyze(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array);
 int random_number_inv();
 void random_generate_inv_arrays(Eigen::MatrixXd& arrays);
-void genetic_algo_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+void genetic_algo_inv(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2);
 void create_random_pairs(int *pairs);
 void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays);
@@ -113,7 +113,7 @@ void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
         array = arrays.row(temp);
         array_2 = arrays.row(i+pair_no);
 
-        genetic_algo_inv(inv_coeff_mat,array,array_2,array_off,array_off_2);
+        genetic_algo_inv(array,array_2,array_off,array_off_2);
 
         new_cost[0]=cost_analyze(inv_coeff_mat,array_off);
         new_cost[1]=cost_analyze(inv_coeff_mat,array_off_2);
@@ -154,7 +154,7 @@ void step_genetic(Eigen::MatrixXd& inv_coeff_mat,Eigen::MatrixXd& arrays)
     return;
 }
 
-void genetic_algo_inv(Eigen::MatrixXd& inv_coeff_mat,Eigen::VectorXd& array,Eigen::VectorXd& array_2,
+void genetic_algo_inv(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2)
 {
     int parents_index[4];

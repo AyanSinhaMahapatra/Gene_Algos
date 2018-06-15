@@ -52,3 +52,6 @@ Shake Number ::::::::: 4  Cost = 14
 <<<<<<<<Lower Cost Found.>>>>>>>>>>> Cost == 14 
                    Neighbourhood Number == 20 
         Trench Number == 4  Cost = 14 
+                              Random Run Number == 0 
+                   Neighbourhood Number == 1 
+        Trench Number == 2  Cost = 17 

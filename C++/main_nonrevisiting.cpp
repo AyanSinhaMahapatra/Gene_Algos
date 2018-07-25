@@ -16,9 +16,46 @@
 using namespace std;
 using namespace Eigen; 
 
+// ToDo Update status open/closed 
+struct treenode
+{
+    int data;
+    struct treenode* left;
+    struct treenode* right;
+};
+
+    struct treenode *his_loc;
+    long long int pop_counter = 0;
+
+// ToDo check if this can be anything 
     int num_arr = 10; //Number of Arrays in the Pool
+
+// ToDo Make these probabilities adaptive
     double mutation_probablity = 0.1;
     double prob_swap = 0.02;
+    double prob_shake = 0.35;
+
+    int max_shake = 10;
+    int max_trench = 50;
+    int max_neigh = 30;
+    int shake_no = 1;
+    int trench_no=1; 
+    int neighbourhood_no = 1;
+    int random_run_no=1;
+
+
+struct treenode* newNode(int data);
+void insert_array(struct treenode *root,Eigen::VectorXd& array);
+int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
+void delete_array(struct treenode *root,Eigen::VectorXd& array); 
+long long int population(struct treenode *root); // How many arrays are stored here
+void delete_tree(struct treenode *root);
+void pop_rec(struct treenode *temp);
+void del_rec(struct treenode *temp);
+void follow_print(struct treenode *root,Eigen::VectorXd& array);
+void check_stray_node(struct treenode *root);
+void stray_rec(struct treenode *temp);
+void check_archive(Eigen::VectorXd& array);
 
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
@@ -33,15 +70,21 @@ void cost_init_gen(Eigen::MatrixXd& coeff_mat,double *cost_array,Eigen::MatrixXd
 void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2);
 int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
-void print_cost_all_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
+void print_cost_all_arrays(int *lowest_cost,Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
 void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
+int check_array(int rand_gen,int *array_random,int size);
+void swap_fixed_pos(Eigen::VectorXd& array);
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+void shake_population(Eigen::MatrixXd& arrays);
+
 
 
 int main()
 {
     int count = 0;
-
     srand(time(NULL));
+    int lowest_cost_arrays;
 
     //Load Co-efficient Matrix, Initialize Arrays and Variables
     Eigen::MatrixXd coeff_mat(116,116);
@@ -49,32 +92,68 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_main(116);
 
+    struct treenode history;
+	his_loc = &history;
+	his_loc = newNode(0);
+
     assign_coeff_mat(coeff_mat);
-
     random_generate_arrays(arrays);
-
-    //print_all_arrays(arrays);
-
-    print_cost_all_arrays(coeff_mat,arrays);
-
+    print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays);
     cout<<"Starts"<<endl;
 
-    
-    while(1)
+    while(lowest_cost_arrays!=0)
     {
         step_genetic(coeff_mat,arrays);
         count++;
 
-        if(count%1000==0)
+        if(count%10==0)
         {
-            cout<<count<<endl;
-            print_cost_all_arrays(coeff_mat,arrays);    
+        	print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays); 
         }
-        //cout<<"Step Main"<<endl;
+
+        if(count%100000==0)
+        {
+            count = 1;
+            shake_no++;
+            print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays); 
+            shake_population(arrays);
+            cout<<"After Shake "<<endl;
+            print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays); 
+
+            if(shake_no>=max_shake) 
+            {
+                trench_no++;
+                shake_no = 1;
+            }
+
+            if(trench_no>=max_trench)
+            {
+                neighbourhood_no++;
+                trench_no = 1;
+                shake_no = 1;
+            }
+
+            if(neighbourhood_no>=max_neigh)
+            {
+                neighbourhood_no = 1;
+                trench_no = 1;
+                shake_no = 1; 
+                random_run_no++;
+
+    			random_generate_arrays(arrays);
+    			print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays);
+    			cout<<"Starts"<<endl;
+            }
+
+        }
     }
+
+
+
     return 0;
 }
 
+// ToDo Make this non-elitist and allow same-cost different arrays to co-exist in the population
 void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
 {
     int pair_no = num_arr/2;
@@ -217,13 +296,18 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
         }
         break;
     }
-    
-    
-    if(check_similar_arrays(array,array_off)||check_similar_arrays(array_2,array_off_2))
-        cout<<" PROBLEM ARRAY NOT CHANGING "<<endl;
+
+    if(check_similar_arrays(array,array_off))
+        cout<<" PROBLEM ARRAY NOT CHANGING 1 "<<endl;
+
+    if(check_similar_arrays(array_2,array_off_2))
+        cout<<" PROBLEM ARRAY NOT CHANGING 2 "<<endl;
 
     if((is_okay(array_off)==0)||(is_okay(array_off_2)==0))
-        cout<< " ERROR ARRAY NOT OKAY" <<endl;
+        cout<< " ERROR ARRAY NOT OKAY GEN_ALGO" <<endl;
+
+    check_archive(array_off);
+    check_archive(array_off_2);
 
     return;
 }
@@ -234,7 +318,7 @@ int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2)
 
     for(int i=0; i<=115; i++)
     {
-        if(array(i)==array_2(i))
+        if(array(i)!=array_2(i))
         {
             flag = 0;
             break;
@@ -256,7 +340,116 @@ void cost_init_gen(Eigen::MatrixXd& coeff_mat,double *cost_array,Eigen::MatrixXd
     return;
 }
 
-// ToDo Merge above and below function
+int check_array(int rand_gen,int *array_random,int size)
+{
+    int flag = 1; 
+    //cout<<"Size = "<<size<<endl;
+    for(int i=1;i<=size;i++)
+    {
+        if(array_random[i]==rand_gen)
+            flag=0;
+    }
+    return flag;
+}
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood)
+{
+    //cout<<"Stirred Not Shaken"<<endl;
+    int array_loc1[57];
+    int array_loc0[57];
+    int array_random1[k_neighbourhood+1];
+    int array_random0[k_neighbourhood+1];
+    int pointer_0=0;
+    int pointer_1=0;
+    int rand_gen=0;
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array_random1[i]=0;
+        array_random0[i]=0;
+    }
+
+    for(int i=2;i<=114;i++)
+    {
+        if(i==94)
+            i++;
+        if(array_main(i)==0)
+        {
+            pointer_0++;
+            array_loc0[pointer_0] = i; 
+        }
+        else if(array_main(i)==1)
+        {
+            pointer_1++;
+            array_loc1[pointer_1] = i;
+        }
+    }
+    if((pointer_0==56)&&(pointer_1==56))
+    {
+        //cout<<" First Task Okay "<<endl;
+    }
+    else
+    {
+        cout<<" Error : Pointers at :"<<endl;
+        cout<<pointer_1<<" == "<<pointer_0<<endl;
+    }
+
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random1,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random1[i]=rand_gen;
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random0,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random0[i]=rand_gen;
+    }
+
+    array=array_main;
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array(array_loc1[array_random1[i]])=0;
+        array(array_loc0[array_random0[i]])=1;
+    }
+
+    if(trench_no%2==0)   //For Alternates Of Fixed Positions 94 and 115 
+        swap_fixed_pos(array);
+
+    
+    check_archive(array);
+}
+
+void shake_population(Eigen::MatrixXd& arrays)
+{
+	Eigen::VectorXd array(116);
+	Eigen::VectorXd shaked_array(116);
+    int temp;
+
+    for(int i=2;i<=num_arr;i++)
+    {
+    	double p_shake = rand() / (double)RAND_MAX;
+
+    	if(p_shake<prob_shake)
+    	{
+        	array = arrays.row(i);
+        	shake(array,shaked_array,neighbourhood_no);
+        	for(int j=1;j<=115;j++)
+        	{
+        	    arrays(i,j)=shaked_array(j);
+        	}
+        }
+    }
+}
 
 void print_all_arrays(Eigen::MatrixXd& arrays)
 {
@@ -269,15 +462,26 @@ void print_all_arrays(Eigen::MatrixXd& arrays)
     }
 }
 
-void print_cost_all_arrays(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
+void swap_fixed_pos(Eigen::VectorXd& array)
+{
+    array(94)=1-array(94);
+    array(115)=1-array(115);
+}
+
+void print_cost_all_arrays(int *lowest_cost,Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
 {
     Eigen::VectorXd array(116);
+    int temp;
+    *lowest_cost = 10000;
 
     for(int i=1;i<=num_arr;i++)
     {
         array = arrays.row(i);
         //cout<<array<<endl<<"-------------------"<<endl;
-        cout<<cost_full(coeff_mat,array)<<"  ";
+        temp = cost_full(coeff_mat,array);
+        cout<<temp<<"  ";
+        if(temp<*lowest_cost)
+            *lowest_cost = temp;
     }
     cout<<endl<<endl;
 
@@ -394,6 +598,8 @@ void random_generate(Eigen::VectorXd& array) //Generates A Random Array which ob
     }
     array(94)= int(rand() % 2);
     array(115)= 1 - array(94);
+
+    check_archive(array);
 }
 
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
@@ -523,4 +729,301 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat)
     	}
     }
     //cout<<"Number of Characters == "<<count<<endl;
+}
+
+// Tree Operation Functions
+// ToDo update functions with status open/close
+struct treenode* newNode(int data)
+{
+  struct treenode* newnode = (struct treenode*)malloc(sizeof(struct treenode));
+
+  newnode->data = data;
+  newnode->left = NULL;
+  newnode->right = NULL;
+
+  return(newnode);
+}
+
+void insert_array(struct treenode *root,Eigen::VectorXd& array)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    struct treenode *temp;
+    temp = root;
+    int temp_int;
+
+    for(int i=1;i<=115;i++)
+    {
+        temp_int = array(i);
+        
+        if(temp_int == 0)
+        {
+            if(temp->left == NULL)
+                temp->left = newNode(i);
+            temp = temp->left;
+        }
+        else if(temp_int == 1)
+        {
+            if(temp->right == NULL)
+                temp->right = newNode(i);
+            temp = temp->right;
+        }
+    }
+    return;
+}
+
+void follow_print(struct treenode *root,Eigen::VectorXd& array)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    struct treenode *temp;
+    temp = root;
+    int temp_int;
+
+    for(int i=1;i<=115;i++)
+    {
+        if(temp == NULL)
+            return;
+
+        temp_int = array(i);
+
+        if(temp->left!=NULL)
+            cout<<i<<"  LEFT TRUE   ";
+        else
+            cout<<i<<"  LEFT FALSE   ";
+        if(temp->right!=NULL)
+            cout<<"RIGHT TRUE"<<endl;
+        else 
+            cout<<"RIGHT FALSE"<<endl;
+        
+        if(temp_int == 0)
+        {
+            temp = temp->left;
+        }
+        else if(temp_int == 1)
+        {
+            temp = temp->right;
+        }
+    }
+
+    return;
+}
+
+void check_stray_node(struct treenode *root)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    stray_rec(root);
+
+    return;
+}
+
+void stray_rec(struct treenode *temp)
+{
+    if(temp == NULL)
+        return;
+
+    if((temp->right == NULL)&&(temp->left == NULL))
+    {
+        if(temp->data!=115)
+            cout<<"Stray at "<<temp->data<<endl;
+    }
+    else{
+        stray_rec(temp->left);
+        stray_rec(temp->right);
+    }
+
+    return;
+}
+
+// 1 - present , 0 - not present
+int is_present(struct treenode *root,Eigen::VectorXd& array)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return 0;
+    }
+
+    int flag = 1;
+    struct treenode *temp;
+    temp = root;
+    int temp_int;
+
+    for(int i=1;i<=115;i++)
+    {
+        temp_int = array(i);
+        
+        if(temp_int == 0)
+            temp = temp->left;
+        else if(temp_int == 1)
+            temp = temp->right;
+
+        if(temp == NULL)
+        {
+            flag = 0;
+            //cout<<"Break at "<<i<<endl;
+            break;
+        }
+    }
+    return flag;
+}
+
+void delete_array(struct treenode *root,Eigen::VectorXd& array)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    struct treenode *temp;
+    temp = root;
+    int temp_int,max_index = 0;
+
+    for(int i=1;i<=115;i++)
+    {
+        temp_int = array(i);
+        
+        if(temp_int == 0)
+        {
+            if(temp->right!=NULL)
+                max_index = i;
+            temp = temp->left;
+        }
+        else if(temp_int == 1)
+        {
+            if(temp->left!=NULL)
+                max_index = i;
+            temp = temp->right;
+        }
+    }
+
+    cout<<"Max Index == "<<max_index<<endl;
+    temp = root;
+
+    for(int i=1;i<=115;i++)
+    {
+        temp_int = array(i);
+        cout<<i<<" ";
+        
+        if(temp_int == 0)
+            temp = temp->left;
+        else if(temp_int == 1)
+            temp = temp->right;
+
+        if(i == max_index)
+        {
+            del_rec(temp);
+            break;
+        }
+    }
+
+    return;
+}
+
+void delete_tree(struct treenode *root)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    del_rec(root);
+
+    return; 
+}
+
+void del_rec(struct treenode *temp)
+{
+    if(temp == NULL)
+        return;
+
+    del_rec(temp->left);
+    del_rec(temp->right);
+    free(temp);
+
+    return;
+}
+
+long long int population(struct treenode *root)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return 0;
+    }
+
+    long long int total;
+    pop_counter = 0;
+    pop_rec(root);
+    total = pop_counter;
+    pop_counter = 0;
+
+    return total;
+}
+
+void pop_rec(struct treenode *temp)
+{
+    if(temp == NULL)
+        return;
+    else if(temp->data == 115)
+    {
+        pop_counter++;
+        return;
+    }
+    else
+    {
+        pop_rec(temp->left);
+        pop_rec(temp->right);
+    }
+}
+
+void check_archive(Eigen::VectorXd& array)
+{
+	if(is_present(his_loc,array))
+    {
+    	Eigen::VectorXd array_arch(116);
+    	int count_arch = 1;
+    	int neigh_arch = 5;
+    	int flag_arch = 1;
+
+    	while(is_present(his_loc,array)==1)
+    	{
+    		shake(array,array_arch,neigh_arch);
+    		if(check_similar_arrays(array,array_arch)==1)
+    			cout<<"Same Array No Shake"<<endl;
+    		array = array_arch;
+    		count_arch++;
+    		if(count_arch%8==0)
+    			neigh_arch++;
+    		if(count_arch%100==0)
+    		{	
+    			flag_arch = 0;
+    			break;
+    		}
+    		cout<<"Count Arch == "<<count_arch<<endl;
+    	}
+
+    	if(flag_arch==1)	
+    		insert_array(his_loc,array);
+    }
+    else
+    	insert_array(his_loc,array);
+
+    if(is_okay(array)==0)
+        cout<< " ERROR ARRAY NOT OKAY CHECK_ARCHIVE" <<endl;
 }

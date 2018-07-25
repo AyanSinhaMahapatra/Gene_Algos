@@ -65,15 +65,18 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
 int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
 void print_cost_all_arrays(int *lowest_cost,Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
 void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays);
-void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
 int check_array(int rand_gen,int *array_random,int size);
 void swap_fixed_pos(Eigen::VectorXd& array);
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+
+
 
 int main()
 {
     int count = 0;
     srand(time(NULL));
-    int lowest_cost_arrays = 1000;
+    int lowest_cost_arrays;
 
     //Load Co-efficient Matrix, Initialize Arrays and Variables
     Eigen::MatrixXd coeff_mat(116,116);
@@ -94,35 +97,35 @@ int main()
         if(count%100000==0)
         {
             count = 1;
-            print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays);  
+            shake_no++;
+            print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays); 
+            shake_population(arrays);
+            cout<<"After Shake "<<endl;
+            print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays); 
 
-            if(shake_no>=max_shake) //max_shake = 20
+            if(shake_no>=max_shake) 
             {
-                //shake(array_main,array,neighbourhood_no);  // Shaked To K'th Neighbourhood
-                lowest_cost = cost_full(coeff_mat,array);
                 trench_no++;
                 shake_no = 1;
-                //print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
             }
 
-            if(trench_no>=max_trench) //max_trench = 10
+            if(trench_no>=max_trench)
             {
                 neighbourhood_no++;
                 trench_no = 1;
                 shake_no = 1;
-                //print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,cost_main,cost_vns);
             }
 
-            if(neighbourhood_no>=max_neigh) //max_neigh = 20
+            if(neighbourhood_no>=max_neigh)
             {
                 neighbourhood_no = 1;
                 trench_no = 1;
                 shake_no = 1; 
                 random_run_no++;
-                //array_main = results_new.row(random_run_no);
-                random_generate(array_main);
-                cost_main = cost_full(coeff_mat,array_main);
-                //print_vns(1,1,1,0,random_run_no,neighbourhood_no,trench_no,shake_no,0,cost_main);
+
+    			random_generate_arrays(arrays);
+    			print_cost_all_arrays(&lowest_cost_arrays,coeff_mat,arrays);
+    			cout<<"Starts"<<endl;
             }
 
         }
@@ -400,6 +403,23 @@ void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhoo
         swap_fixed_pos(array);
 }
 
+void shake_population(Eigen::MatrixXd& arrays)
+{
+	Eigen::VectorXd array(116);
+	Eigen::VectorXd shaked_array(116);
+    int temp;
+
+    for(int i=1;i<=num_arr;i++)
+    {
+        array = arrays.row(i);
+        shake(array,shaked_array,neighbourhood_no);
+        for(int j=1;j<=115;j++)
+        {
+            arrays(i,j)=shaked_array(j);
+        }
+    }
+}
+
 // ToDo Merge above and below function
 
 void print_all_arrays(Eigen::MatrixXd& arrays)
@@ -423,6 +443,7 @@ void print_cost_all_arrays(int *lowest_cost,Eigen::MatrixXd& coeff_mat,Eigen::Ma
 {
     Eigen::VectorXd array(116);
     int temp;
+    *lowest_cost = 10000;
 
     for(int i=1;i<=num_arr;i++)
     {

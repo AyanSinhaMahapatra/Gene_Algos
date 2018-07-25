@@ -119,13 +119,13 @@ void recursive_trav(Eigen::VectorXd array_val,int rec_level)
 
 	Eigen::VectorXd array(116);
 	array = array_val;
+	
 	random_change(coeff_mat,array);
 
 	check_history_and_store(coeff_mat,array);
 
 	for(int i=1;i<=no_of_rec;i++)
 		recursive_trav(array,rec_level+1);
-
 
 	return;
 }

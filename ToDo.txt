@@ -1,7 +1,0 @@
-1. Check If Shaking From Results and then running VNS, we can get back to the result. 
-2. Determine the Best Possible use of Top_Genetic_VNS and let it run for 4-5 ish cost results. (If that Actually Exists)
-3. Gather as much Data possible from costs found. 
-3. Implement the Inverse method and see how it works out. 
-4. Check the Code by Suvomay Sir for Inspiration and Understand the Maths if Possible.
-5. Check the entire code once. 
-6. Implement Different Geneetic Algos/ Crossover Methods or other methods which directly effect the Schema system.  

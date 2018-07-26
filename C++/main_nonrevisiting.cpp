@@ -32,7 +32,7 @@ struct treenode
 
 // ToDo Make these probabilities adaptive
     double mutation_probablity = 0.1;
-    double prob_swap = 0.02;
+    double prob_swap = 0.2;
     double prob_shake = 0.35;
 
     int max_shake = 10;
@@ -248,6 +248,7 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     if(place_1!=place_2)
         cout<<"ERROR DIFF"<<endl;
     place_1--;
+    cout<<"No of Diff == "<<place_1<<endl;
 
     for(int i=1;i<=place_1;i++)
     {
@@ -260,6 +261,15 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
             array_diff_1at2[i] = temp_swap;
         }
         counter++;
+    }
+    for(int i=1;i<=2;i++)
+    {
+        
+        int rand_p = int((rand() / (double)RAND_MAX)*place_1);
+        temp_swap = array_diff_1at1[rand_p];
+        array_diff_1at1[rand_p] = array_diff_1at2[rand_p];
+        array_diff_1at2[rand_p] = temp_swap;
+        
     }
 
     for(int i=1;i<=place_1;i++)
@@ -312,6 +322,7 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     return;
 }
 
+// If same Array then 1 else 0 
 int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2)
 {
     int flag = 1;
@@ -424,9 +435,7 @@ void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhoo
 
     if(trench_no%2==0)   //For Alternates Of Fixed Positions 94 and 115 
         swap_fixed_pos(array);
-
     
-    check_archive(array);
 }
 
 void shake_population(Eigen::MatrixXd& arrays)
@@ -442,7 +451,10 @@ void shake_population(Eigen::MatrixXd& arrays)
     	if(p_shake<prob_shake)
     	{
         	array = arrays.row(i);
+
         	shake(array,shaked_array,neighbourhood_no);
+        	check_archive(array);
+
         	for(int j=1;j<=115;j++)
         	{
         	    arrays(i,j)=shaked_array(j);
@@ -1015,7 +1027,7 @@ void check_archive(Eigen::VectorXd& array)
     			flag_arch = 0;
     			break;
     		}
-    		cout<<"Count Arch == "<<count_arch<<endl;
+    		//cout<<"Count Arch == "<<count_arch<<endl;
     	}
 
     	if(flag_arch==1)	

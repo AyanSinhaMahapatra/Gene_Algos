@@ -1,17 +1,33 @@
+#include <stdio.h>
+#include<iostream>
+#include<cmath>
+#include<algorithm>
+#include<ctime>
+#include<Eigen/Dense> //Linear Algebra Library
+using namespace std;
+using namespace Eigen; 
+
 // 0 - Left, 1 - Right 
 // data - At which Depth the Node is in the main Tree
-// status : 'o' - open, 'c' - closed
+// status : 0 - open, 1 - closed
 struct treenode
 {
     int data;
-    char status;
+    bool status;
     struct treenode* left;
     struct treenode* right;
+    struct treenode* parent;
 };
 
-	struct treenode *his_loc;
+	struct treenode *cur_loc;
 	long long int pop_counter = 0;
+	double rand_find_thr = 0.5;
 
+
+// Helper Functions
+void random_generate(Eigen::VectorXd& array);
+
+// Tree Functions
 struct treenode* newNode(int data);
 void insert_array(struct treenode *root,Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
@@ -29,15 +45,9 @@ int main()
 {
 	srand(time(NULL));
 	
-	struct treenode history, current;
-	his_loc = &history;
+	struct treenode current;
     cur_loc = &current;
-	his_loc = newNode(0);
 	cur_loc = newNode(0);
-
-	Eigen::MatrixXd coeff_mat(116,116);
-	assign_coeff_mat(coeff_mat);
-
 
 
 	return 0;
@@ -46,20 +56,21 @@ int main()
 
 
 // Tree Operation Functions
-struct treenode* newNode(int data)
+struct treenode* newNode(int data) // Done
 {
   struct treenode* newnode = (struct treenode*)malloc(sizeof(struct treenode));
 
   newnode->data = data;
-  newnode->status = 'o'
+  newnode->status = 0;
   newnode->left = NULL;
   newnode->right = NULL;
+  newnode->parent = NULL;
 
   return(newnode);
 }
 
 // It is assumed that this array is not present
-void insert_array(struct treenode *root,Eigen::VectorXd& array) 
+void insert_array(struct treenode *root,Eigen::VectorXd& array) //Done
 {
 	if(root == NULL)
 	{
@@ -77,20 +88,52 @@ void insert_array(struct treenode *root,Eigen::VectorXd& array)
 		
 		if(temp_int == 0)
 		{
-			if(temp->left == NULL)
+			if(temp->left == NULL){
 				temp->left = newNode(i);
+				temp->left->parent = temp;
+			}
 			temp = temp->left;
 		}
 		else if(temp_int == 1)
 		{
-			if(temp->right == NULL)
+			if(temp->right == NULL){
 				temp->right = newNode(i);
+				temp->right->parent = temp;
+			}
 			temp = temp->right;
 		}
 	}
 
-	// Pruning Steps Here
+	temp->status = 1;
+	temp = temp->parent;
 
+	bool rec_flag = 1;
+
+	while(rec_flag && temp!=NULL)
+	{
+		
+		if (temp->left != NULL && temp->right != NULL && temp->left->status == 1 && temp->right->status == 1)
+		{
+			temp->status = 1;
+			temp = temp->parent;
+		}
+		else 
+			rec_flag = 0;
+	}
+
+	if (temp == NULL)
+	{
+		cout<<"Insert_Array Null encountered "<<endl;
+		return;
+	}
+
+	if(temp->left != NULL && temp->left->status == 1)
+		temp = temp->left;
+	else 
+		temp = temp->right;
+
+	del_rec(temp->left);
+	del_rec(temp->right);
 
 	return;
 }
@@ -136,7 +179,7 @@ void follow_print(struct treenode *root,Eigen::VectorXd& array)
 	return;
 }
 
-void check_stray_node(struct treenode *root)
+void check_stray_node(struct treenode *root) //Done
 {
 	if(root == NULL)
 	{
@@ -149,14 +192,14 @@ void check_stray_node(struct treenode *root)
 	return;
 }
 
-void stray_rec(struct treenode *temp)
+void stray_rec(struct treenode *temp) //Done
 {
 	if(temp == NULL)
 		return;
 
 	if((temp->right == NULL)&&(temp->left == NULL))
 	{
-		if(temp->data!=115)
+		if(temp->data!=115 && temp->status==0)
 			cout<<"Stray at "<<temp->data<<endl;
 	}
 	else{
@@ -167,7 +210,7 @@ void stray_rec(struct treenode *temp)
 	return;
 }
 
-int is_present(struct treenode *root,Eigen::VectorXd& array)
+int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
 {
 	if(root == NULL)
 	{
@@ -182,8 +225,11 @@ int is_present(struct treenode *root,Eigen::VectorXd& array)
 
 	for(int i=1;i<=115;i++)
 	{
-		if(temp->status == 'c')
-			return 1;
+		if(temp->status == 1)
+		{
+			flag = 1;
+			break;
+		}
 
 		temp_int = array(i);
 		
@@ -204,9 +250,93 @@ int is_present(struct treenode *root,Eigen::VectorXd& array)
 
 void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
 {
+	if(root == NULL)
+	{
+		cout<<"Tree Empty"<<endl;
+		return;
+	}
 
+	struct treenode *temp;
+	temp = root;
+	int temp_int;
+
+	for(int i=1; i<=115; i++)
+	{
+		if(temp->status == 1)
+			break;
+
+		temp_int = array(i);
+
+		if(temp_int == 0)
+			temp = temp -> left;
+		else if(temp_int == 1)
+			temp = temp -> right;
+	}
+
+	new_array = array;
+	temp = temp -> parent;
+	double rand_find = 0;
+
+	if(temp->left != NULL && temp->left->status == 1)
+	{
+		if(temp->right != NULL)
+			temp->right = newNode(temp->data + 1);
+		temp = temp -> right;
+		new_array(temp->data) = 1;
+	}
+	else if(temp->right != NULL && temp->right->status == 1)
+	{
+		if(temp->left != NULL)
+			temp->left = newNode(temp->data + 1);
+		temp = temp -> left;
+		new_array(temp->data) = 0;
+	}	
+
+	while(temp->data != 115)
+	{
+		if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
+		{	
+			if(temp->left != NULL && temp->left->status == 1)
+			{
+				if( temp->right == NULL)
+					temp->right = newnode(temp->data+1);
+				temp = temp->right;
+				new_array(temp->data) = 1;
+			}
+			else 
+			{
+				if( temp->left == NULL)
+					temp->left = newnode(temp->data+1);
+				temp = temp->left;
+				new_array(temp->data) = 0;
+			}
+		}
+		else
+		{
+			rand_find = rand() / (double)RAND_MAX;
+
+			if(rand_find<rand_find_thr)   //Left
+			{
+				if( temp->left == NULL)
+					temp->left = newnode(temp->data+1);
+				temp = temp->left;
+				new_array(temp->data) = 0;
+			}
+			else //Right
+			{
+				if( temp->right == NULL)
+					temp->right = newnode(temp->data+1);
+				temp = temp->right;
+				new_array(temp->data) = 1;
+			}
+		}
+	}
+
+	if(temp->data != 115)
+		cout<<"Problem in Open_FIND while loop"<<endl;
 }
 
+/*
 void delete_array(struct treenode *root,Eigen::VectorXd& array)
 {
 	if(root == NULL)
@@ -221,7 +351,7 @@ void delete_array(struct treenode *root,Eigen::VectorXd& array)
 
 	for(int i=1;i<=115;i++)
 	{
-		if(temp->status == 'c')
+		if(temp->status == 1)
 			break;
 
 		temp_int = array(i);
@@ -262,8 +392,9 @@ void delete_array(struct treenode *root,Eigen::VectorXd& array)
 
 	return;
 }
+*/
 
-void delete_tree(struct treenode *root)
+void delete_tree(struct treenode *root) //Done
 {
 	if(root == NULL)
 	{
@@ -276,7 +407,7 @@ void delete_tree(struct treenode *root)
 	return;	
 }
 
-void del_rec(struct treenode *temp)
+void del_rec(struct treenode *temp) //Done
 {
 	if(temp == NULL)
 		return;
@@ -288,7 +419,7 @@ void del_rec(struct treenode *temp)
 	return;
 }
 
-long long int population(struct treenode *root)
+long long int population(struct treenode *root) //Done
 {
 	if(root == NULL)
 	{
@@ -305,13 +436,13 @@ long long int population(struct treenode *root)
 	return total;
 }
 
-void pop_rec(struct treenode *temp)
+void pop_rec(struct treenode *temp) //Done
 {
 	if(temp == NULL)
 		return;
-	else if(temp->data == 115)
+	else if(temp->status == 1)
 	{
-		pop_counter++;
+		pop_counter += pow(2,(115 - temp->data));
 		return;
 	}
 	else
@@ -319,4 +450,42 @@ void pop_rec(struct treenode *temp)
 		pop_rec(temp->left);
 		pop_rec(temp->right);
 	}
+}
+
+
+// Helper Functions
+
+void random_generate(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
+{
+    //srand(time(NULL));
+    array.fill(0);
+    int rand_gen=0;
+    for(int i=0;i<56;i++)
+    {
+        rand_gen = rand() % 112;
+        rand_gen +=2;
+        if(rand_gen==94)
+        {
+            do{
+                rand_gen++;
+                if(rand_gen==115)
+                    rand_gen=2;
+            }
+            while(array(rand_gen)==1);
+        }
+        while(array(rand_gen)==1)
+        {
+            rand_gen++;
+            if(rand_gen==115)
+                rand_gen=2;
+            if(rand_gen==94)
+                rand_gen++;
+        }
+        if(array(rand_gen)!=1)
+            array(rand_gen)=1;
+        else
+            i--;
+    }
+    array(94)= int(rand() % 2);
+    array(115)= 1 - array(94);
 }

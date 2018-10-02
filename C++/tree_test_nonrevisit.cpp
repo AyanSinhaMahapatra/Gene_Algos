@@ -44,6 +44,7 @@ string change_ds(Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
 void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void delete_array(struct treenode *root,Eigen::VectorXd& array); 
 long long int population(struct treenode *root); // How many arrays are stored here
 void delete_tree(struct treenode *root);
@@ -116,12 +117,17 @@ int main()
         cout<<endl;
     }
 
-    for(long int i=1;i<=10000000;i++)
+    array = arrays.row(1);
+
+    while(1)
     {
-    	find_open_okay(archive,array,array2);
-    	if(is_okay(array2)==0)
-    		cout<<"----------------------------------------------------------------"<<endl;
-    	insert_array_and_prune(archive,array2);
+    	find_open_insert_prune(archive,array,array2);
+
+    	if(is_present(archive,array2)==0)
+    	{	
+    		cout<<"1  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
+    		return 0;
+    	}
     	//for(int j=1;j<=115;j++)
             //cout<<array2(j);
         //cout<<endl;
@@ -338,8 +344,18 @@ int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
 			flag = 0;
 			break;
 		}
+
+		if(temp->data == 115 && temp->status==0)
+			flag = 0;
 	}
 	return flag;
+}
+
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+{
+	find_open_okay(root,array,new_array);
+	insert_array_and_prune(root,new_array);
+	return;
 }
 
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
@@ -525,7 +541,7 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		}
 		else if(no_of_zeros==56||no_of_ones==56) // Only one possibility of Okay Array
 		{
-			//cout<<"0/1 56 statement starts"<<endl;
+			//cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
 
 			int is_only_okay_present = 0;
 
@@ -719,6 +735,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			//cout<<"Backtrack starts "<<endl;
 
 			bool rec_flag = 1;
+
+			if(temp->data != 94)
+			{
+				if(temp->is_this == 0)
+					no_of_zeros--;
+				else
+					no_of_ones--;
+			}
 
 			temp = temp->parent;
 

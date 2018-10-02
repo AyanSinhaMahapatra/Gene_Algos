@@ -701,22 +701,25 @@ void assign_coeff_mat(Eigen::MatrixXd& coeff_mat)
 }
 
 // Tree Operation Functions
-struct treenode* newNode(int data)
+struct treenode* newNode(int data,int is_this) // Done
 {
   struct treenode* newnode = (struct treenode*)malloc(sizeof(struct treenode));
 
   newnode->data = data;
+  newnode->is_this = is_this;
+  newnode->status = 0;
   newnode->left = NULL;
   newnode->right = NULL;
+  newnode->parent = NULL;
 
   return(newnode);
 }
 
-void insert_array(struct treenode *root,Eigen::VectorXd& array)
+void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array) //Done
 {
     if(root == NULL)
     {
-        cout<<"Tree Empty"<<endl;
+        cout<<"Invalid Root"<<endl;
         return;
     }
 
@@ -727,20 +730,69 @@ void insert_array(struct treenode *root,Eigen::VectorXd& array)
     for(int i=1;i<=115;i++)
     {
         temp_int = array(i);
+
+        if(temp->status == 1)
+        {
+            //cout<<"Array Already Present in insert_array"<<endl;
+            break;
+        }
         
         if(temp_int == 0)
         {
-            if(temp->left == NULL)
-                temp->left = newNode(i);
+            if(temp->left == NULL){
+                temp->left = newNode(i,0);
+                temp->left->parent = temp;
+            }
             temp = temp->left;
         }
         else if(temp_int == 1)
         {
-            if(temp->right == NULL)
-                temp->right = newNode(i);
+            if(temp->right == NULL){
+                temp->right = newNode(i,1);
+                temp->right->parent = temp;
+            }
             temp = temp->right;
         }
     }
+
+    temp->status = 1;
+    temp = temp->parent;
+
+    bool rec_flag = 1;
+
+    while(rec_flag && temp!=NULL)
+    {
+        
+        if (temp->left != NULL && temp->right != NULL && temp->left->status == 1 && temp->right->status == 1)
+        {
+            temp->status = 1;
+            temp = temp->parent;
+        }
+        else 
+            rec_flag = 0;
+    }
+
+    if (temp == NULL)
+    {
+        cout<<"Insert_Array -> Tree Overflow "<<endl;
+        return;
+    }
+
+    if(temp->left != NULL && temp->left->status == 1)
+        temp = temp->left;
+    else
+        temp = temp->right;
+
+    struct treenode *left, *right;
+    left = temp->left;
+    right = temp->right;
+    temp->left = NULL;
+    temp->right = NULL;
+    
+
+    del_rec(left);
+    del_rec(right);
+
     return;
 }
 
@@ -759,14 +811,17 @@ void follow_print(struct treenode *root,Eigen::VectorXd& array)
     for(int i=1;i<=115;i++)
     {
         if(temp == NULL)
+        {
+            cout<<"End at == "<<i-2<<endl;  
             return;
+        }
 
         temp_int = array(i);
 
         if(temp->left!=NULL)
-            cout<<i<<"  LEFT TRUE   ";
+            cout<<i-1<<"  LEFT TRUE   ";
         else
-            cout<<i<<"  LEFT FALSE   ";
+            cout<<i-1<<"  LEFT FALSE   ";
         if(temp->right!=NULL)
             cout<<"RIGHT TRUE"<<endl;
         else 
@@ -785,7 +840,7 @@ void follow_print(struct treenode *root,Eigen::VectorXd& array)
     return;
 }
 
-void check_stray_node(struct treenode *root)
+void check_stray_node(struct treenode *root) //Done
 {
     if(root == NULL)
     {
@@ -798,14 +853,14 @@ void check_stray_node(struct treenode *root)
     return;
 }
 
-void stray_rec(struct treenode *temp)
+void stray_rec(struct treenode *temp) //Done
 {
     if(temp == NULL)
         return;
 
     if((temp->right == NULL)&&(temp->left == NULL))
     {
-        if(temp->data!=115)
+        if(temp->data!=115 && temp->status==0)
             cout<<"Stray at "<<temp->data<<endl;
     }
     else{
@@ -816,7 +871,7 @@ void stray_rec(struct treenode *temp)
     return;
 }
 
-int is_present(struct treenode *root,Eigen::VectorXd& array)
+int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
 {
     if(root == NULL)
     {
@@ -831,6 +886,12 @@ int is_present(struct treenode *root,Eigen::VectorXd& array)
 
     for(int i=1;i<=115;i++)
     {
+        if(temp->status == 1)
+        {   
+            flag = 1;
+            break;
+        }
+
         temp_int = array(i);
         
         if(temp_int == 0)
@@ -841,14 +902,518 @@ int is_present(struct treenode *root,Eigen::VectorXd& array)
         if(temp == NULL)
         {
             flag = 0;
-            cout<<"Break at "<<i<<endl;
             break;
         }
+
+        if(temp->data == 115 && temp->status==0)
+            flag = 0;
     }
     return flag;
 }
 
-void delete_array(struct treenode *root,Eigen::VectorXd& array)
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+{
+    find_open_okay(root,array,new_array);
+    insert_array_and_prune(root,new_array);
+    return;
+}
+
+void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+{
+    if(root == NULL)
+    {
+        cout<<"Tree Empty"<<endl;
+        return;
+    }
+
+    //cout<<"Function Starts"<<endl;
+
+    struct treenode *temp;
+    struct treenode *temp_check;
+    temp = root;
+    int temp_int;
+    int is_not_found = 1; 
+
+    for(int i=1; i<=115; i++)
+    {
+        if(temp->status == 1)
+            break;
+
+        temp_int = array(i);
+
+        if(temp_int == 0)
+            temp = temp -> left;
+        else if(temp_int == 1)
+            temp = temp -> right;
+    }
+
+    new_array = array;
+    temp = temp -> parent;
+    double rand_find = 0;   
+
+    int no_of_zeros = 0;
+    int no_of_ones = 0;
+    int is_94_1 = 2;
+    int backtrack_needed = 0;
+    
+    for(int c = 2;c <= temp-> data;c++)
+    {
+        temp_int = new_array(c);
+
+        if(c == 94)
+        {
+            if( temp_int == 0 )
+                is_94_1 = 0;
+            else
+                is_94_1 = 1;
+        }
+        else if( temp_int == 0 )
+            no_of_zeros++;
+        else
+            no_of_ones++;
+    }
+
+    if(check_number_01(root,temp,no_of_zeros,no_of_ones,new_array) == 0)
+    {
+        cout<<"Error No of Zeroes/Ones not matching at Start "<<endl;
+        return;
+    }
+
+    //cout<<"While Loop In Function Starts"<<endl;
+
+    while(is_not_found)
+    {
+        if(temp->left!=NULL&&temp->right!=NULL&&temp->left->status==1&&temp->right->status==1)
+        {
+            cout<<"Error Inconsistent Tree FUCK FUCK FUCK"<<endl;
+            return;
+        }
+        else if(temp->data == 0) // Always value 0 at position 1
+        {
+            if(temp->left!=NULL && temp->left->status == 0)
+            {
+                temp = temp->left;
+                new_array(temp->data) = 0;
+            }
+            else if(temp->left!=NULL && temp->left->status == 1)
+            {
+                cout<<" Overflow at 1 Left Subtree Full "<<endl;
+                return;
+            }
+            else if(temp->left==NULL)
+            {
+                temp->left = newNode(temp->data+1,0);
+                temp->left->parent = temp;
+                temp = temp->left;
+                new_array(temp->data) = 0;
+            }
+        }
+        else if(temp->data == 114) // opposite of 94 at 115
+        {
+            //cout<<"114 statement Starts"<<endl;
+
+            if(temp->status == 1)
+                backtrack_needed = 1;
+            else if( is_94_1 == 1 )
+            {
+                if(temp->left != NULL && temp->left->status == 1)
+                {   
+                    backtrack_needed = 1;
+                }
+                else
+                {
+                    if( temp->left == NULL )
+                    {
+                        temp->left = newNode(temp->data+1,0);
+                        temp->left->parent = temp;
+                        temp = temp->left;
+                        new_array(temp->data) = 0;
+                    }
+                    else if( temp->left != NULL )
+                    {
+                        temp = temp->left;
+                        new_array(temp->data) = 0;
+                    }
+
+                    is_not_found = 0;
+                }
+            }
+            else if( is_94_1 == 0 )
+            {
+                if( temp->right != NULL && temp->right->status == 1)
+                {   
+                    backtrack_needed = 1;
+                }
+                else
+                {
+                    if( temp->right == NULL )
+                    {
+                        temp->right = newNode(temp->data+1,1);
+                        temp->right->parent = temp;
+                        temp = temp->right;
+                        new_array(temp->data) = 1;
+                    }
+                    else if( temp->right != NULL )
+                    {
+                        temp = temp->right;
+                        new_array(temp->data) = 1;
+                    }   
+
+                    is_not_found = 0;
+                }
+            }
+            else if( is_94_1 == 2 )
+            {   
+                cout<<" Error is_94_1 is 2 "<<endl;
+                return;
+            }
+
+            if(temp->data == 115)
+                temp = temp->parent;
+            if(temp->is_this == 1)
+            {
+                while(temp->is_this != 0)
+                    temp = temp->parent;
+            }
+            else if(temp->is_this == 0)
+            {
+                while(temp->is_this != 1)
+                    temp = temp->parent;
+            }
+
+            temp->status = 1;
+
+            struct treenode *left, *right;
+            if( temp->left != NULL )
+                left = temp->left;
+            if( temp->right != NULL )
+                right = temp->right;
+            temp->left = NULL;
+            temp->right = NULL;
+
+            if( temp->left != NULL )
+                del_rec(left);
+            if( temp->right != NULL )
+                del_rec(right);
+
+            //cout<<"114 Statement ends"<<endl;
+
+        }
+        else if(no_of_zeros==56||no_of_ones==56) // Only one possibility of Okay Array
+        {
+            //cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
+
+            int is_only_okay_present = 0;
+
+            temp_check = temp;
+
+            if(no_of_zeros==56)
+            {
+                while(temp != NULL && temp->data != 114)
+                {
+                    if(temp -> right != NULL)
+                        temp = temp -> right;
+                    else
+                    {
+                        if(temp->status == 1)
+                        {
+                            is_only_okay_present = 1;
+                            break;
+                        }
+                        else
+                        {
+                            is_only_okay_present = 0;
+                            break;
+                        }
+                    }
+                } 
+            }
+            else if(no_of_ones==56)
+            {
+                while(temp != NULL && temp->data != 114)
+                {
+                    if(temp -> left != NULL)
+                        temp = temp -> left;
+                    else
+                    {
+                        if(temp->status == 1)
+                        {
+                            is_only_okay_present = 1;
+                            break;
+                        }
+                        else
+                        {
+                            is_only_okay_present = 0;
+                            break;
+                        }
+                    }
+                } 
+            }
+
+            if(is_only_okay_present == 0)
+            {
+                //cout<<"only okay is not present "<<endl;
+
+                temp = temp_check;
+
+                if(no_of_zeros==56)
+                {
+                    while(temp!= NULL && temp->data != 114)
+                    {
+                        if(temp -> right != NULL)
+                            temp = temp -> right;
+                        else
+                        {
+                            temp->right = newNode(temp->data+1,1);
+                            temp->right->parent = temp;
+                            temp = temp->right;
+                        }
+                        new_array(temp->data) = 1;
+                    }
+                }
+                else if(no_of_ones==56)
+                {
+                    while(temp!= NULL && temp->data != 114)
+                    {
+                        if(temp -> left != NULL)
+                            temp = temp -> left;
+                        else
+                        {
+                            temp->left = newNode(temp->data+1,0);
+                            temp->left->parent = temp;
+                            temp = temp->left;
+                        }
+                        new_array(temp->data) = 0;
+                    }
+                }
+
+                if(temp->data != 114)
+                    cout<<"Error 114 not reached"<<endl;
+            }
+            else
+            {   
+                //cout<<"Only okay is present go back"<<endl;
+
+                backtrack_needed = 1;
+                temp = temp_check;
+
+                // Make This Status 1 and Delete from this if not NULL
+                temp->status = 1;
+
+                struct treenode *left, *right;
+                if( temp->left != NULL )
+                    left = temp->left;
+                if( temp->right != NULL )
+                    right = temp->right;
+                temp->left = NULL;
+                temp->right = NULL;
+
+                if( temp->left != NULL )
+                    del_rec(left);
+                if( temp->right != NULL )
+                    del_rec(right);
+            }
+
+            //cout<<"0/1 56 statement ends"<<endl;
+
+        }
+        else if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
+        {   
+            //cout<<"Normal statement starts "<<endl;
+
+            if(temp->left != NULL && temp->left->status == 1)
+            {
+                if( temp->right == NULL)
+                {   
+                    temp->right = newNode(temp->data+1,1);
+                    temp->right->parent = temp;
+                }
+                temp = temp->right;
+                new_array(temp->data) = 1;
+                if(temp->data == 94)
+                    is_94_1 = 1;
+                else
+                    no_of_ones++;
+            }
+            else 
+            {
+                if( temp->left == NULL)
+                {
+                    temp->left = newNode(temp->data+1,0);
+                    temp->left->parent = temp;
+                }
+                temp = temp->left;
+                new_array(temp->data) = 0;
+                if(temp->data == 94)
+                    is_94_1 = 0;
+                else
+                    no_of_zeros++;
+            }
+
+            //cout<<"Normal statement ends "<<endl;
+        }
+        else
+        {
+            //cout<<"Normal random statement starts "<<endl;
+
+            rand_find = rand() / (double)RAND_MAX;
+
+            if(rand_find < rand_find_thr)   //Left
+            {
+                if( temp->left == NULL)
+                {   
+                    temp->left = newNode(temp->data+1,0);
+                    temp->left->parent = temp;
+                }
+                temp = temp->left;
+                new_array(temp->data) = 0;
+                if(temp->data == 94)
+                    is_94_1 = 0;
+                else
+                    no_of_zeros++;
+            }
+            else //Right
+            {
+                if( temp->right == NULL)
+                {
+                    temp->right = newNode(temp->data+1,1);
+                    temp->right->parent = temp;
+                }
+                temp = temp->right;
+                new_array(temp->data) = 1;
+                if(temp->data == 94)
+                    is_94_1 = 1;
+                else
+                    no_of_ones++;
+            }
+
+            //cout<<"Normal random statement ends "<<endl;
+        }
+
+        if(backtrack_needed == 1)
+        {
+            //cout<<"Backtrack starts "<<endl;
+
+            bool rec_flag = 1;
+
+            if(temp->data != 94)
+            {
+                if(temp->is_this == 0)
+                    no_of_zeros--;
+                else
+                    no_of_ones--;
+            }
+
+            temp = temp->parent;
+
+            while(rec_flag && temp!=NULL)
+            {
+                if (temp->left != NULL && temp->right != NULL && temp->left->status == 1 && temp->right->status == 1)
+                {
+                    temp->status = 1;
+
+                    if(temp->data != 94)
+                    {
+                        if(temp->is_this == 0)
+                            no_of_zeros--;
+                        else
+                            no_of_ones--;
+                    }
+
+                    temp = temp->parent;
+                }
+                else 
+                    rec_flag = 0;
+            }
+
+            if (temp == NULL)
+            {
+                cout<<"Insert_Array -> Tree Overflow "<<endl;
+                return;
+            }
+
+            struct treenode *temp_delete;
+            temp_delete = temp;
+
+            if(temp_delete->left != NULL && temp_delete->left->status == 1)
+                temp_delete = temp_delete->left;
+            else
+                temp_delete = temp_delete->right;
+
+            struct treenode *left, *right;
+            if(temp_delete->left != NULL)   
+                left = temp_delete->left;
+            if(temp_delete->right != NULL)  
+                right = temp_delete->right;
+            temp_delete->left = NULL;
+            temp_delete->right = NULL;
+            
+            if(temp_delete->left != NULL)   
+                del_rec(left);
+            if(temp_delete->right != NULL)
+                del_rec(right);
+
+            backtrack_needed = 0;
+
+            //cout<<"Backtrack ends"<<endl;
+        }
+
+        /*
+        if(check_number_01(root,temp,no_of_zeros,no_of_ones,new_array) == 0)
+        {
+            cout<<"Error No of Zeroes/Ones not matching "<<endl;
+        }
+        else
+        {
+            cout<<"0/1 matching at last "<<endl;
+        }*/
+    }
+
+    //cout<<"Function ends"<<endl;
+
+    return;
+}
+
+int check_number_01(struct treenode *root,struct treenode *temp,int no_of_zeros,int no_of_ones,Eigen::VectorXd& new_array)
+{
+    struct treenode *temp_check;
+
+    temp_check = root;
+    int no_1 = 0;
+    int no_0 = 0;
+    int is_okay = 1;
+
+    for(int i=1; i<=temp->data; i++)
+    {
+        int temp_now = new_array(i);
+        
+        if(temp_now == 0)
+        {
+            temp_check = temp_check->left;
+            if(i!=1&&i!=94&&i!=115)
+                no_0++;
+        }
+        else
+        {
+            temp_check = temp_check->right;
+            if(i!=1&&i!=94&&i!=115)
+                no_1++;
+        }
+
+        if(temp_check->is_this != temp_now)
+        {   
+            cout<<"Is This an Error! XD "<<endl;
+            is_okay = 0;
+        }
+    }
+
+    if(no_of_ones!=no_1||no_of_zeros!=no_0)
+        is_okay = 0;
+
+    return is_okay;
+}
+
+void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
 {
     if(root == NULL)
     {
@@ -858,50 +1423,85 @@ void delete_array(struct treenode *root,Eigen::VectorXd& array)
 
     struct treenode *temp;
     temp = root;
-    int temp_int,max_index = 0;
+    int temp_int;
 
-    for(int i=1;i<=115;i++)
+    for(int i=1; i<=115; i++)
     {
-        temp_int = array(i);
-        
-        if(temp_int == 0)
-        {
-            if(temp->right!=NULL)
-                max_index = i;
-            temp = temp->left;
-        }
-        else if(temp_int == 1)
-        {
-            if(temp->left!=NULL)
-                max_index = i;
-            temp = temp->right;
-        }
-    }
-
-    cout<<"Max Index == "<<max_index<<endl;
-    temp = root;
-
-    for(int i=1;i<=115;i++)
-    {
-        temp_int = array(i);
-        cout<<i<<" ";
-        
-        if(temp_int == 0)
-            temp = temp->left;
-        else if(temp_int == 1)
-            temp = temp->right;
-
-        if(i == max_index)
-        {
-            del_rec(temp);
+        if(temp->status == 1)
             break;
+
+        temp_int = array(i);
+
+        if(temp_int == 0)
+            temp = temp -> left;
+        else if(temp_int == 1)
+            temp = temp -> right;
+    }
+
+    new_array = array;
+    temp = temp -> parent;
+    double rand_find = 0;
+
+    if(temp->left != NULL && temp->left->status == 1)
+    {
+        if(temp->right == NULL)
+            temp->right = newNode(temp->data + 1,1);
+        temp = temp -> right;
+        new_array(temp->data) = 1;
+    }
+    else
+    {
+        if(temp->left == NULL)
+            temp->left = newNode(temp->data + 1,0);
+        temp = temp -> left;
+        new_array(temp->data) = 0;
+    }   
+
+    while(temp->data != 115)
+    {
+        if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
+        {   
+            if(temp->left != NULL && temp->left->status == 1)
+            {
+                if( temp->right == NULL)
+                    temp->right = newNode(temp->data+1,1);
+                temp = temp->right;
+                new_array(temp->data) = 1;
+            }
+            else 
+            {
+                if( temp->left == NULL)
+                    temp->left = newNode(temp->data+1,0);
+                temp = temp->left;
+                new_array(temp->data) = 0;
+            }
+        }
+        else
+        {
+            rand_find = rand() / (double)RAND_MAX;
+
+            if(rand_find < rand_find_thr)   //Left
+            {
+                if( temp->left == NULL)
+                    temp->left = newNode(temp->data+1,0);
+                temp = temp->left;
+                new_array(temp->data) = 0;
+            }
+            else //Right
+            {
+                if( temp->right == NULL)
+                    temp->right = newNode(temp->data+1,1);
+                temp = temp->right;
+                new_array(temp->data) = 1;
+            }
         }
     }
 
-    return;
+    if(temp->data != 115)
+        cout<<"Problem in Open_FIND while loop"<<endl;
 }
 
-void delete_tree(struct treenode *root)
+void delete_tree(struct treenode* root) //Done
 {
     if(root == NULL)
     {
@@ -914,11 +1514,11 @@ void delete_tree(struct treenode *root)
     return; 
 }
 
-void del_rec(struct treenode *temp)
+void del_rec(struct treenode* temp) //Done
 {
     if(temp == NULL)
         return;
-
+    
     del_rec(temp->left);
     del_rec(temp->right);
     free(temp);
@@ -926,7 +1526,7 @@ void del_rec(struct treenode *temp)
     return;
 }
 
-long long int population(struct treenode *root)
+long long int population(struct treenode *root) //Done
 {
     if(root == NULL)
     {
@@ -943,13 +1543,15 @@ long long int population(struct treenode *root)
     return total;
 }
 
-void pop_rec(struct treenode *temp)
+void pop_rec(struct treenode *temp) //Done
 {
     if(temp == NULL)
         return;
-    else if(temp->data == 115)
+    else if(temp->status == 1)
     {
-        pop_counter++;
+        pop_counter += pow(2,(115 - temp->data));
+        //if(temp->data != 115)
+            cout<<"Pop Data = "<<temp->data<<endl;
         return;
     }
     else
@@ -958,3 +1560,4 @@ void pop_rec(struct treenode *temp)
         pop_rec(temp->right);
     }
 }
+

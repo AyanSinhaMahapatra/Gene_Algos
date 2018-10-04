@@ -10,8 +10,6 @@ using namespace std;
 using namespace Eigen; 
 
 
-
-
 // is_this : 0 - Left of Parent, 1 - Right of Parent, 2 - Root
 // data : At which Depth the Node is in the main Tree
 // status : 0 - open, 1 - closed

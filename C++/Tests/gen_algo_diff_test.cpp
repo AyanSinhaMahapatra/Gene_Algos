@@ -9,12 +9,16 @@ using namespace Eigen;
 
     double prob_swap = 0.2;
     int is_debugging_on = 0;
+    int trench_no = 1;
 
 void random_generate(Eigen::VectorXd& array);
 void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2);
 int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2);
 int is_okay(Eigen::VectorXd& array);
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+int check_array(int rand_gen,int *array_random,int size);
+void swap_fixed_pos(Eigen::VectorXd& array);
 
 
 int main()
@@ -29,12 +33,19 @@ int main()
 
     while(1)
     {
+        random_generate(array_1);
 
-    random_generate(array_1);
-    array_2 = array_1;
+        for(int j=1;j<=115;j++)
+            cout<<array_1(j);
+        cout<<endl;
 
-    genetic_algo(array_1,array_2,array_off_1,array_off_2);
+        shake(array_1,array_2,2);
+        
+        for(int j=1;j<=115;j++)
+            cout<<array_2(j);
+        cout<<endl;
 
+        break;
     }
 
     return 0;
@@ -133,8 +144,6 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
         }
     }
 
-
-
     if(check_similar_arrays(array,array_off))
         cout<<" PROBLEM ARRAY NOT CHANGING 1 "<<endl;
 
@@ -143,9 +152,6 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
 
     if((is_okay(array_off)==0)||(is_okay(array_off_2)==0))
         cout<< " ERROR ARRAY NOT OKAY GEN_ALGO" <<endl;
-
-    //ToDo check_archive(array_off);
-    //ToDo check_archive(array_off_2);
 
     return;
 }
@@ -166,6 +172,98 @@ int check_similar_arrays(Eigen::VectorXd& array,Eigen::VectorXd& array_2)
     return flag;
 }
 
+int check_array(int rand_gen,int *array_random,int size)
+{
+    int flag = 1; 
+    //cout<<"Size = "<<size<<endl;
+    for(int i=1;i<=size;i++)
+    {
+        if(array_random[i]==rand_gen)
+            flag=0;
+    }
+    return flag;
+}
+
+void swap_fixed_pos(Eigen::VectorXd& array)
+{
+    array(94)=1-array(94);
+    array(115)=1-array(115);
+}
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood)
+{
+    //cout<<"Stirred Not Shaken"<<endl;
+    int array_loc1[57];
+    int array_loc0[57];
+    int array_random1[k_neighbourhood+1];
+    int array_random0[k_neighbourhood+1];
+    int pointer_0=0;
+    int pointer_1=0;
+    int rand_gen=0;
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array_random1[i]=0;
+        array_random0[i]=0;
+    }
+
+    for(int i=2;i<=114;i++)
+    {
+        if(i==94)
+            i++;
+        if(array_main(i)==0)
+        {
+            pointer_0++;
+            array_loc0[pointer_0] = i; 
+        }
+        else if(array_main(i)==1)
+        {
+            pointer_1++;
+            array_loc1[pointer_1] = i;
+        }
+    }
+    if((pointer_0==56)&&(pointer_1==56))
+    {
+        //cout<<" First Task Okay "<<endl;
+    }
+    else
+    {
+        cout<<" Error : Pointers at :"<<endl;
+        cout<<pointer_1<<" == "<<pointer_0<<endl;
+    }
+
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random1,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random1[i]=rand_gen;
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random0,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random0[i]=rand_gen;
+    }
+
+    array=array_main;
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array(array_loc1[array_random1[i]])=0;
+        array(array_loc0[array_random0[i]])=1;
+    }
+
+    if(trench_no%2==0)   //For Alternates Of Fixed Positions 94 and 115 
+        swap_fixed_pos(array);
+    
+}
 
 int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
 {

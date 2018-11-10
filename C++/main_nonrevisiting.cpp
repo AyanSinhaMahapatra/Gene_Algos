@@ -30,11 +30,11 @@ struct treenode
     struct treenode* parent;
 };
 
-    struct treenode *his_loc;
+    struct treenode *archive;
     long long int pop_counter = 0;
+    double rand_find_thr = 0.5;
 
-// ToDo check if this can be anything 
-    int num_arr = 10; //Number of Arrays in the Pool
+    int num_arr = 100; //Number of Arrays in the Pool
 
 // ToDo Make these probabilities adaptive
     double mutation_probablity = 0.1;
@@ -48,6 +48,7 @@ struct treenode
     int trench_no=1; 
     int neighbourhood_no = 1;
     int random_run_no=1;
+    int is_debugging_on = 1;
 
 
 // Tree Functions
@@ -57,7 +58,7 @@ string change_ds(Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
 void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array);
 void delete_array(struct treenode *root,Eigen::VectorXd& array); 
 long long int population(struct treenode *root); // How many arrays are stored here
 void delete_tree(struct treenode *root);
@@ -73,7 +74,7 @@ int check_number_01(struct treenode *root,struct treenode *temp,int no_of_zeros,
 void assign_coeff_mat(Eigen::MatrixXd& coeff_mat);
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array);
 void random_generate(Eigen::VectorXd& array);
-int is_okay(Eigen::VectorXd& array);
+int is_okay(Eigen::VectorXd& array);                                    //Returns 1 if okay 0 if not okay
 void assign_results_new(Eigen::MatrixXd& coeff_mat);
 void assign_results_old(Eigen::MatrixXd& coeff_mat);
 void print_all_arrays(Eigen::MatrixXd& arrays);
@@ -105,9 +106,9 @@ int main()
     Eigen::VectorXd array(116);
     Eigen::VectorXd array_main(116);
 
-    struct treenode history;
-	his_loc = &history;
-	his_loc = newNode(0);
+    struct treenode archive_curr;
+	archive = &archive_curr;
+	archive = newNode(0,2);
 
     assign_coeff_mat(coeff_mat);
     random_generate_arrays(arrays);
@@ -228,9 +229,12 @@ void step_genetic(Eigen::MatrixXd& coeff_mat,Eigen::MatrixXd& arrays)
     return;
 }
 
+//ToDo Make the probablity of Swap Dependent on how different the arrays are so there's always change
 void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
     Eigen::VectorXd& array_off,Eigen::VectorXd& array_off_2)
 {
+    if((is_okay(array)==0)||(is_okay(array_2)==0))
+        cout<< " ERROR ARRAY NOT OKAY GEN_ALGO AT FIRST" <<endl;
 
     array_off = array;
     array_off_2 = array_2;
@@ -289,47 +293,62 @@ void genetic_algo(Eigen::VectorXd& array,Eigen::VectorXd& array_2,
 
     // Making Sure One Swap happened atleast for both arrays
 
-    while(1)
+    if(check_similar_arrays(array,array_off))
     {
-        place_1 = rand()%113 + 2;
-        place_2 = rand()%113 + 2;
-
-        if((place_1!=94)&&(place_2!=94)&&(array_off(place_1)!=array_off(place_2))&&(place_1!=place_2))
+        while(1)
         {
-            temp_swap = array_off(place_1);
-            array_off(place_1) = array_off(place_2);
-            array_off(place_2) = temp_swap;
+            place_1 = rand()%113 + 2;
+            place_2 = rand()%113 + 2;
 
-            break;
-        }
-    } 
+            if((place_1!=94)&&(place_2!=94)&&(array_off(place_1)!=array_off(place_2))&&(place_1!=place_2))
+            {
+                temp_swap = array_off(place_1);
+                array_off(place_1) = array_off(place_2);
+                array_off(place_2) = temp_swap;
 
-    while(1)
-    {
-        place_1 = rand()%113 + 2;
-        place_2 = rand()%113 + 2;
-
-        if((place_1!=94)&&(place_2!=94)&&(array_off_2(place_1)!=array_off_2(place_2))&&(place_1!=place_2))
-        {
-            temp_swap = array_off_2(place_1);
-            array_off_2(place_1) = array_off_2(place_2);
-            array_off_2(place_2) = temp_swap;
-
-            break;
-        }
+                break;
+            }
+        } 
     }
 
-    if(check_similar_arrays(array,array_off))
-        cout<<" PROBLEM ARRAY NOT CHANGING 1 "<<endl;
-
     if(check_similar_arrays(array_2,array_off_2))
-        cout<<" PROBLEM ARRAY NOT CHANGING 2 "<<endl;
+    {
+        while(1)
+        {
+            place_1 = rand()%113 + 2;
+            place_2 = rand()%113 + 2;
+
+            if((place_1!=94)&&(place_2!=94)&&(array_off_2(place_1)!=array_off_2(place_2))&&(place_1!=place_2))
+            {
+                temp_swap = array_off_2(place_1);
+                array_off_2(place_1) = array_off_2(place_2);
+                array_off_2(place_2) = temp_swap;
+
+                break;
+            }
+        }
+    }
 
     if((is_okay(array_off)==0)||(is_okay(array_off_2)==0))
         cout<< " ERROR ARRAY NOT OKAY GEN_ALGO" <<endl;
 
-    //ToDo check_archive(array_off);
-    //ToDo check_archive(array_off_2);
+    if(is_present(archive,array_off))
+    {
+        find_open_insert_prune(archive,array_off);
+    }
+    else
+    {
+        insert_array_and_prune(archive,array_off);
+    }
+
+    if(is_present(archive,array_off_2))
+    {
+        find_open_insert_prune(archive,array_off_2);
+    }
+    else
+    {
+        insert_array_and_prune(archive,array_off_2);
+    }
 
     return;
 }
@@ -465,7 +484,14 @@ void shake_population(Eigen::MatrixXd& arrays)
         	array = arrays.row(i);
 
         	shake(array,shaked_array,neighbourhood_no);
-        	//ToDo check_archive(array);
+        	if(is_present(archive,shaked_array))
+            {
+                find_open_insert_prune(archive,shaked_array);
+            }
+            else
+            {
+                insert_array_and_prune(archive,shaked_array);
+            }
 
         	for(int j=1;j<=115;j++)
         	{
@@ -582,20 +608,20 @@ int is_okay(Eigen::VectorXd& array)  //Returns 1 if okay 0 if not okay
             i++;
         if(int(array(i))==1)
             total_ones++;
-        if(int(array(i))==1)
+        if(int(array(i))==0)
             total_zeros++;
     }
     if(total_ones!=56)
     {
         flag=0;
         if(is_debugging_on == 1)
-            cout<<"Problem 3"<<endl;
+            cout<<"Problem 3"<<total_ones<<endl;
     }
     if(total_zeros!=56)
     {
         flag=0;
         if(is_debugging_on == 1)
-            cout<<"Problem 4"<<endl;
+            cout<<"Problem 4"<<total_zeros<<endl;
     }
     return flag;
 }
@@ -635,6 +661,16 @@ void random_generate(Eigen::VectorXd& array) //Generates A Random Array which ob
     array(115)= 1 - array(94);
 
     //ToDo check_archive(array);
+    if(is_present(archive,array))
+    {
+        find_open_insert_prune(archive,array);
+    }
+    else
+    {
+        insert_array_and_prune(archive,array);
+    }
+    
+    return;
 }
 
 int cost_full(Eigen::MatrixXd& coeff_mat,Eigen::VectorXd& array)
@@ -977,10 +1013,19 @@ int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
     return flag;
 }
 
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array)
 {
+    if(is_okay(array)==0)
+        cout<<"Error Input Array at find_open_okay is not okay"<<endl;
+    Eigen::VectorXd new_array(116);
     find_open_okay(root,array,new_array);
+    if(is_okay(new_array)==0)
+        cout<<"Error Array by find_open_okay is not okay"<<endl;
+    if(is_present(root,array)==0)
+        cout<<"Error Array not Present "<<endl;
+
     insert_array_and_prune(root,new_array);
+    array = new_array;
     return;
 }
 

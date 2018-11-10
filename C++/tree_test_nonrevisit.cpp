@@ -27,6 +27,7 @@ struct treenode
 	long long int pop_counter = 0;
 	double rand_find_thr = 0.5;
 	int num_arr = 8;
+	int is_debugging_on = 1;
 
 
 // Helper Functions
@@ -34,6 +35,8 @@ void random_generate(Eigen::VectorXd& array);
 void random_generate_arrays(Eigen::MatrixXd& arrays);
 int is_okay(Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+int check_array(int rand_gen,int *array_random,int size);
 
 // Tree Functions
 struct treenode* newNode(int data,int is_this);
@@ -42,7 +45,7 @@ string change_ds(Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
 void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array);
 void delete_array(struct treenode *root,Eigen::VectorXd& array); 
 long long int population(struct treenode *root); // How many arrays are stored here
 void delete_tree(struct treenode *root);
@@ -119,9 +122,32 @@ int main()
 
     while(1)
     {
-    	find_open_insert_prune(archive,array,array2);
+    	//find_open_insert_prune(archive,array);
+    	if(is_okay(array)==0)
+    		return 0;
+    	shake(array,array2,1);
+    	array = array2;
+    	
+     	if(is_present(archive,array))
+        {
+        	cout<<"Shaked array present"<<endl;
+        	cout<<"Shaked Array == "<<endl;
+    		for(int j=1;j<=115;j++)
+            	cout<<array2(j);
+        	cout<<endl;
+            find_open_insert_prune(archive,array);
+        }
+        else
+        {
+        	//cout<<"Shaked array not present"<<endl;
+        	//cout<<"Shaked Array == "<<endl;
+    		//for(int j=1;j<=115;j++)
+            	//cout<<array2(j);
+        	//cout<<endl;	
+            insert_array_and_prune(archive,array);
+        }
 
-    	if(is_present(archive,array2)==0)
+    	if(is_present(archive,array)==0)
     	{	
     		cout<<"1  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
     		return 0;
@@ -129,7 +155,6 @@ int main()
     	//for(int j=1;j<=115;j++)
             //cout<<array2(j);
         //cout<<endl;
-    	array = array2;
     	//cout<<i<<endl;
     }
 
@@ -349,10 +374,14 @@ int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
 	return flag;
 }
 
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array)
 {
+	Eigen::VectorXd new_array(116);
 	find_open_okay(root,array,new_array);
+	if(is_okay(new_array)==0)
+        cout<<"Error Array by find_open_okay is not okay"<<endl;
 	insert_array_and_prune(root,new_array);
+	array = new_array;
 	return;
 }
 
@@ -364,7 +393,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		return;
 	}
 
-	//cout<<"Function Starts"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"Function Starts"<<endl;
 
 	struct treenode *temp;
 	struct treenode *temp_check;
@@ -417,7 +447,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		return;
 	}
 
-	//cout<<"While Loop In Function Starts"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"While Loop In Function Starts"<<endl;
 
 	while(is_not_found)
 	{
@@ -448,7 +479,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		}
 		else if(temp->data == 114) // opposite of 94 at 115
 		{
-			//cout<<"114 statement Starts"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"114 statement Starts"<<endl;
 
 			if(temp->status == 1)
 				backtrack_needed = 1;
@@ -534,12 +566,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			if( temp->right != NULL )
 				del_rec(right);
 
-			//cout<<"114 Statement ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"114 Statement ends"<<endl;
 
 		}
 		else if(no_of_zeros==56||no_of_ones==56) // Only one possibility of Okay Array
 		{
-			//cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
 
 			int is_only_okay_present = 0;
 
@@ -590,7 +624,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
 			if(is_only_okay_present == 0)
 			{
-				//cout<<"only okay is not present "<<endl;
+				if(is_debugging_on == 1)
+            		cout<<"only okay is not present "<<endl;
 
 				temp = temp_check;
 
@@ -630,7 +665,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			}
 			else
 			{	
-				//cout<<"Only okay is present go back"<<endl;
+				if(is_debugging_on == 1)
+            		cout<<"Only okay is present go back"<<endl;
 
 				backtrack_needed = 1;
 				temp = temp_check;
@@ -652,12 +688,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					del_rec(right);
 			}
 
-			//cout<<"0/1 56 statement ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"0/1 56 statement ends"<<endl;
 
 		}
 		else if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
 		{	
-			//cout<<"Normal statement starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal statement starts "<<endl;
 
 			if(temp->left != NULL && temp->left->status == 1)
 			{
@@ -688,11 +726,13 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					no_of_zeros++;
 			}
 
-			//cout<<"Normal statement ends "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal statement ends "<<endl;
 		}
 		else
 		{
-			//cout<<"Normal random statement starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal random statement starts "<<endl;
 
 			rand_find = rand() / (double)RAND_MAX;
 
@@ -725,12 +765,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					no_of_ones++;
 			}
 
-			//cout<<"Normal random statement ends "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal random statement ends "<<endl;
 		}
 
 		if(backtrack_needed == 1)
 		{
-			//cout<<"Backtrack starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Backtrack starts "<<endl;
 
 			bool rec_flag = 1;
 
@@ -793,7 +835,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
 			backtrack_needed = 0;
 
-			//cout<<"Backtrack ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Backtrack ends"<<endl;
 		}
 
 		/*
@@ -807,7 +850,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		}*/
 	}
 
-	//cout<<"Function ends"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"Function ends"<<endl;
 
 	return;
 }
@@ -938,7 +982,6 @@ void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new
 	if(temp->data != 115)
 		cout<<"Problem in Open_FIND while loop"<<endl;
 }
-
 
 /*
 void delete_array(struct treenode *root,Eigen::VectorXd& array)
@@ -1071,6 +1114,93 @@ string change_ds(Eigen::VectorXd& array)
 
 
 // Helper Functions
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood)
+{
+    //cout<<"Stirred Not Shaken"<<endl;
+    int array_loc1[57];
+    int array_loc0[57];
+    int array_random1[k_neighbourhood+1];
+    int array_random0[k_neighbourhood+1];
+    int pointer_0=0;
+    int pointer_1=0;
+    int rand_gen=0;
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array_random1[i]=0;
+        array_random0[i]=0;
+    }
+
+    for(int i=2;i<=114;i++)
+    {
+        if(i==94)
+            i++;
+        if(array_main(i)==0)
+        {
+            pointer_0++;
+            array_loc0[pointer_0] = i; 
+        }
+        else if(array_main(i)==1)
+        {
+            pointer_1++;
+            array_loc1[pointer_1] = i;
+        }
+    }
+    if((pointer_0==56)&&(pointer_1==56))
+    {
+        //cout<<" First Task Okay "<<endl;
+    }
+    else
+    {
+        cout<<" Error : Pointers at :"<<endl;
+        cout<<pointer_1<<" == "<<pointer_0<<endl;
+    }
+
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random1,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random1[i]=rand_gen;
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random0,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random0[i]=rand_gen;
+    }
+
+    array=array_main;
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array(array_loc1[array_random1[i]])=0;
+        array(array_loc0[array_random0[i]])=1;
+    }
+
+    //if(trench_no%2==0)   //For Alternates Of Fixed Positions 94 and 115 
+       // swap_fixed_pos(array);
+    
+}
+
+int check_array(int rand_gen,int *array_random,int size)
+{
+    int flag = 1; 
+    //cout<<"Size = "<<size<<endl;
+    for(int i=1;i<=size;i++)
+    {
+        if(array_random[i]==rand_gen)
+            flag=0;
+    }
+    return flag;
+}
 
 void random_generate(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
 {

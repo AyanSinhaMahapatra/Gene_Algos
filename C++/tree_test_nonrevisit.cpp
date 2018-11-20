@@ -27,6 +27,8 @@ struct treenode
 	long long int pop_counter = 0;
 	double rand_find_thr = 0.5;
 	int num_arr = 8;
+	int is_debugging_on = 0;
+	int archive_inconsistent = 0;
 
 
 // Helper Functions
@@ -34,15 +36,19 @@ void random_generate(Eigen::VectorXd& array);
 void random_generate_arrays(Eigen::MatrixXd& arrays);
 int is_okay(Eigen::VectorXd& array);
 void assign_result_arrays(Eigen::VectorXd& array);
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood);
+int check_array(int rand_gen,int *array_random,int size);
 
 // Tree Functions
 struct treenode* newNode(int data,int is_this);
+void check_inconsistencies(struct treenode *root);
+void check_rec(struct treenode *temp,int level, int what_is_this);
 void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array);
 string change_ds(Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
 void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array);
 void delete_array(struct treenode *root,Eigen::VectorXd& array); 
 long long int population(struct treenode *root); // How many arrays are stored here
 void delete_tree(struct treenode *root);
@@ -52,6 +58,7 @@ void follow_print(struct treenode *root,Eigen::VectorXd& array);
 void check_stray_node(struct treenode *root);
 void stray_rec(struct treenode *temp);
 int check_number_01(struct treenode *root,struct treenode *temp,int no_of_zeros,int no_of_ones,Eigen::VectorXd& new_array);
+void check_and_amend_count(int temp_data,int prev_zeroes,int prev_ones,int prev_is_94_1,Eigen::VectorXd& prev_array);
 
 
 int main()
@@ -64,6 +71,7 @@ int main()
 
 	Eigen::VectorXd array(116);
 	Eigen::VectorXd array2(116);
+	Eigen::VectorXd array3(116);
 
 	Eigen::MatrixXd arrays(num_arr+1,116);
     random_generate_arrays(arrays);
@@ -79,7 +87,7 @@ int main()
     		array(114) = 1 - array(114);
     	if(i%4==0)
     		array(113) = 1 - array(113);
-    	insert_array(archive,array);
+    	insert_array_and_prune(archive,array);
     	for(int j=1;j<=115;j++)
             cout<<array(j);
         cout<<endl;
@@ -87,8 +95,8 @@ int main()
 
     for(long int i=1;i<=100000000;i++)
     {
-    	find_open(archive,array,array2);
-    	insert_array(archive,array2);
+    	find_open_okay(archive,array,array2);
+    	insert_array_and_prune(archive,array2);
     	for(int j=1;j<=115;j++)
             cout<<array2(j);
         cout<<endl;
@@ -99,7 +107,10 @@ int main()
     cout<<"Population == "<<population(archive)<<endl;
     //array = arrays.row(1);
     //follow_print(archive,array);
-	*/ 
+	*/
+    
+
+    //    Find Open Shake Test  
 
     array = arrays.row(1);
     for(int i=1;i<=8;i++)
@@ -116,12 +127,51 @@ int main()
     }
 
     array = arrays.row(1);
+    array3 = array;
 
-    while(1)
+    int count_run = 2;
+    while(archive_inconsistent!=1)
     {
-    	find_open_insert_prune(archive,array,array2);
+    	//find_open_insert_prune(archive,array);
+    	count_run++;
+    	if(count_run%5==0)
+    	{
+    		array2 = array;
+    		array = array3;
+    		array3 = array2;
+    	}
 
-    	if(is_present(archive,array2)==0)
+    	if(is_okay(array)==0)
+    		break;
+    	shake(array,array2,1);
+    	
+     	if(is_present(archive,array2))
+        {
+        	cout<<"Shaked array present"<<endl;
+        	cout<<"Array before Shaking == "<<endl;
+    		for(int j=1;j<=115;j++)
+            	cout<<array(j);
+        	cout<<endl;
+        	cout<<"Shaked Array == "<<endl;
+    		for(int j=1;j<=115;j++)
+            	cout<<array2(j);
+        	cout<<endl;
+            find_open_insert_prune(archive,array2);
+        }
+        else
+        {
+        	//cout<<"Shaked array not present"<<endl;
+        	//cout<<"Shaked Array == "<<endl;
+    		//for(int j=1;j<=115;j++)
+            	//cout<<array2(j);
+        	//cout<<endl;	
+            insert_array_and_prune(archive,array2);
+        }
+
+        array = array2;
+        check_inconsistencies(archive);
+
+    	if(is_present(archive,array)==0)
     	{	
     		cout<<"1  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
     		return 0;
@@ -129,12 +179,11 @@ int main()
     	//for(int j=1;j<=115;j++)
             //cout<<array2(j);
         //cout<<endl;
-    	array = array2;
     	//cout<<i<<endl;
     }
 
-    cout<<"Population == "<<population(archive)<<endl;
-
+	cout<<"Population == "<<population(archive)<<endl;
+    
 	return 0;
 }
 
@@ -151,6 +200,67 @@ struct treenode* newNode(int data,int is_this) // Done
   newnode->parent = NULL;
 
   return(newnode);
+}
+
+void check_inconsistencies(struct treenode *root)
+{
+	check_rec(root,0,2);
+}
+
+void check_rec(struct treenode *temp,int level, int what_is_this)
+{
+	int continue_no = 0;
+
+	if(temp == NULL)
+		return;
+
+	if(temp->status == 1)
+	{
+		if(temp->left!=NULL || temp->right!=NULL)
+			continue_no = 1;
+	}
+
+	if(temp->status == 0)
+	{
+		if(temp->left==NULL && temp->right==NULL && temp->data != 115)
+			continue_no = 1;
+
+		if(temp->left!=NULL && temp->right!=NULL)
+		{
+			if(temp->left->status == 1 && temp->right->status == 1)
+				continue_no = 1;
+		}
+	}
+
+	if(temp->left!= NULL)
+	{
+		if(temp->left->parent != temp)
+			continue_no = 1;
+	}
+
+	if(temp->right!=NULL)
+	{
+		if(temp->right->parent != temp)
+			continue_no = 1;
+	}	
+
+	if(temp->data != level)
+		continue_no = 1;
+
+	if(temp->is_this != what_is_this)
+		continue_no = 1;
+
+	if(continue_no == 0)
+	{
+		check_rec(temp->left,level+1,0);
+		check_rec(temp->right,level+1,1);
+	}
+	else
+	{
+		cout<<"Archive Inconsistent Fuck!!!! "<<endl;
+		archive_inconsistent = 1;
+	}
+
 }
 
 void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array) //Done
@@ -349,10 +459,60 @@ int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
 	return flag;
 }
 
-void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
+void check_and_amend_count(int temp_data,int prev_zeroes,int prev_ones,int prev_is_94_1,Eigen::VectorXd& prev_array)
 {
+	int no_of_zeros = 0;
+	int no_of_ones = 0;
+	int is_94_1 = 2;
+	int temp_int;
+	
+	//Initializing the ones/zeroes counters at start
+	for(int c = 2;c <= temp_data;c++)
+	{
+		temp_int = prev_array(c);
+
+		if(c == 94)
+		{
+			if( temp_int == 0 )
+				is_94_1 = 0;
+			else
+				is_94_1 = 1;
+		}
+		else if( temp_int == 0 )
+			no_of_zeros++;
+		else
+			no_of_ones++;
+	}
+
+	if(no_of_ones!=prev_ones || no_of_zeros!=prev_zeroes || is_94_1!=prev_is_94_1)
+	{
+		cout<<"Count not okay Changing Count "<<endl;
+		cout<<"In function == "<<endl;
+		cout<<prev_ones<<" "<<prev_zeroes<<" "<<prev_is_94_1<<endl;
+		cout<<"In check function == "<<endl;
+		cout<<no_of_ones<<" "<<no_of_zeros<<" "<<is_94_1<<endl;
+
+		no_of_ones=prev_ones;
+		no_of_zeros=prev_zeroes; 
+		is_94_1=prev_is_94_1;
+	}
+	else 
+	{
+		if(is_debugging_on == 1)
+        	cout<<"Counts Okay Check Done"<<endl;
+	}
+
+	return;
+}
+
+void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array)
+{
+	Eigen::VectorXd new_array(116);
 	find_open_okay(root,array,new_array);
+	if(is_okay(new_array)==0)
+        cout<<"Error Array by find_open_okay is not okay"<<endl;
 	insert_array_and_prune(root,new_array);
+	array = new_array;
 	return;
 }
 
@@ -364,7 +524,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		return;
 	}
 
-	//cout<<"Function Starts"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"Function Starts"<<endl;
 
 	struct treenode *temp;
 	struct treenode *temp_check;
@@ -385,15 +546,20 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			temp = temp -> right;
 	}
 
+	// Going to place till where Array matches, steps back 1 step from where find starts
 	new_array = array;
 	temp = temp -> parent;
 	double rand_find = 0;	
+
+	if(is_debugging_on == 1)
+        cout<<"Status 1 Discovered at Below -> "<<temp->data<<endl;
 
 	int no_of_zeros = 0;
 	int no_of_ones = 0;
 	int is_94_1 = 2;
 	int backtrack_needed = 0;
 	
+	//Initializing the ones/zeroes counters at start
 	for(int c = 2;c <= temp-> data;c++)
 	{
 		temp_int = new_array(c);
@@ -417,7 +583,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		return;
 	}
 
-	//cout<<"While Loop In Function Starts"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"While Loop In Function Starts"<<endl;
 
 	while(is_not_found)
 	{
@@ -448,12 +615,21 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 		}
 		else if(temp->data == 114) // opposite of 94 at 115
 		{
-			//cout<<"114 statement Starts"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"114 statement Starts"<<endl;
 
 			if(temp->status == 1)
+			{	
 				backtrack_needed = 1;
+
+				if(is_debugging_on == 1)
+            		cout<<"114 statement status = 1 at first"<<endl;
+			}
 			else if( is_94_1 == 1 )
 			{
+				if(is_debugging_on == 1)
+            		cout<<"114 statement is_94_1 = 1 at first"<<endl;
+
 				if(temp->left != NULL && temp->left->status == 1)
 				{	
 					backtrack_needed = 1;
@@ -478,6 +654,9 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			}
 			else if( is_94_1 == 0 )
 			{
+				if(is_debugging_on == 1)
+            		cout<<"114 statement is_94_1 = 0 at first"<<endl;
+
 				if( temp->right != NULL && temp->right->status == 1)
 				{	
 					backtrack_needed = 1;
@@ -503,21 +682,36 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			else if( is_94_1 == 2 )
 			{	
 				cout<<" Error is_94_1 is 2 "<<endl;
+				archive_inconsistent = 1;
 				return;
 			}
 
+			// ToDo possible breach in counting
 			if(temp->data == 115)
 				temp = temp->parent;
 			if(temp->is_this == 1)
 			{
 				while(temp->is_this != 0)
+				{	
+					if(temp->data!=94)
+						no_of_zeros--;
 					temp = temp->parent;
+				}
 			}
 			else if(temp->is_this == 0)
 			{
 				while(temp->is_this != 1)
+				{
+					if(temp->data!=94)
+						no_of_ones--;
 					temp = temp->parent;
+				}
 			}
+
+			//check_and_amend_count(temp->data,no_of_zeros,no_of_ones,is_94_1,new_array);
+
+			if(is_debugging_on == 1)
+            	cout<<"114 statement at last deleting from -> "<<temp->data<<endl;
 
 			temp->status = 1;
 
@@ -534,12 +728,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			if( temp->right != NULL )
 				del_rec(right);
 
-			//cout<<"114 Statement ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"114 Statement ends"<<endl;
 
 		}
 		else if(no_of_zeros==56||no_of_ones==56) // Only one possibility of Okay Array
 		{
-			//cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
 
 			int is_only_okay_present = 0;
 
@@ -590,7 +786,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
 			if(is_only_okay_present == 0)
 			{
-				//cout<<"only okay is not present "<<endl;
+				if(is_debugging_on == 1)
+            		cout<<"only okay is not present "<<endl;
 
 				temp = temp_check;
 
@@ -630,7 +827,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			}
 			else
 			{	
-				//cout<<"Only okay is present go back"<<endl;
+				if(is_debugging_on == 1)
+            		cout<<"Only okay is present go back"<<endl;
 
 				backtrack_needed = 1;
 				temp = temp_check;
@@ -652,12 +850,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					del_rec(right);
 			}
 
-			//cout<<"0/1 56 statement ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"0/1 56 statement ends"<<endl;
 
 		}
 		else if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
 		{	
-			//cout<<"Normal statement starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal statement starts "<<endl;
 
 			if(temp->left != NULL && temp->left->status == 1)
 			{
@@ -688,11 +888,13 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					no_of_zeros++;
 			}
 
-			//cout<<"Normal statement ends "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal statement ends "<<endl;
 		}
 		else
 		{
-			//cout<<"Normal random statement starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal random statement starts "<<endl;
 
 			rand_find = rand() / (double)RAND_MAX;
 
@@ -725,12 +927,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 					no_of_ones++;
 			}
 
-			//cout<<"Normal random statement ends "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Normal random statement ends "<<endl;
 		}
 
 		if(backtrack_needed == 1)
 		{
-			//cout<<"Backtrack starts "<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Backtrack starts "<<endl;
 
 			bool rec_flag = 1;
 
@@ -770,6 +974,7 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 				return;
 			}
 
+			// Deleting the Backtracked Path (One below current temp position)
 			struct treenode *temp_delete;
 			temp_delete = temp;
 
@@ -793,21 +998,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
 			backtrack_needed = 0;
 
-			//cout<<"Backtrack ends"<<endl;
+			if(is_debugging_on == 1)
+            	cout<<"Backtrack ends"<<endl;
 		}
 
-		/*
-		if(check_number_01(root,temp,no_of_zeros,no_of_ones,new_array) == 0)
-		{
-			cout<<"Error No of Zeroes/Ones not matching "<<endl;
-		}
-		else
-		{
-			cout<<"0/1 matching at last "<<endl;
-		}*/
 	}
 
-	//cout<<"Function ends"<<endl;
+	if(is_debugging_on == 1)
+        cout<<"Function ends"<<endl;
 
 	return;
 }
@@ -939,7 +1137,6 @@ void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new
 		cout<<"Problem in Open_FIND while loop"<<endl;
 }
 
-
 /*
 void delete_array(struct treenode *root,Eigen::VectorXd& array)
 {
@@ -1048,7 +1245,7 @@ void pop_rec(struct treenode *temp) //Done
 	{
 		pop_counter += pow(2,(115 - temp->data));
 		//if(temp->data != 115)
-			cout<<"Pop Data = "<<temp->data<<endl;
+			//cout<<"Pop Data = "<<temp->data<<endl;
 		return;
 	}
 	else
@@ -1071,6 +1268,93 @@ string change_ds(Eigen::VectorXd& array)
 
 
 // Helper Functions
+
+void shake(Eigen::VectorXd& array_main,Eigen::VectorXd& array,int k_neighbourhood)
+{
+    //cout<<"Stirred Not Shaken"<<endl;
+    int array_loc1[57];
+    int array_loc0[57];
+    int array_random1[k_neighbourhood+1];
+    int array_random0[k_neighbourhood+1];
+    int pointer_0=0;
+    int pointer_1=0;
+    int rand_gen=0;
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array_random1[i]=0;
+        array_random0[i]=0;
+    }
+
+    for(int i=2;i<=114;i++)
+    {
+        if(i==94)
+            i++;
+        if(array_main(i)==0)
+        {
+            pointer_0++;
+            array_loc0[pointer_0] = i; 
+        }
+        else if(array_main(i)==1)
+        {
+            pointer_1++;
+            array_loc1[pointer_1] = i;
+        }
+    }
+    if((pointer_0==56)&&(pointer_1==56))
+    {
+        //cout<<" First Task Okay "<<endl;
+    }
+    else
+    {
+        cout<<" Error : Pointers at :"<<endl;
+        cout<<pointer_1<<" == "<<pointer_0<<endl;
+    }
+
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random1,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random1[i]=rand_gen;
+        rand_gen = rand() % 56;
+        rand_gen++;
+        while(check_array(rand_gen,array_random0,k_neighbourhood)==0)
+        {
+            rand_gen = rand() % 56;
+            rand_gen++;
+        }
+        array_random0[i]=rand_gen;
+    }
+
+    array=array_main;
+
+    for(int i=1;i<=k_neighbourhood;i++)
+    {
+        array(array_loc1[array_random1[i]])=0;
+        array(array_loc0[array_random0[i]])=1;
+    }
+
+    //if(trench_no%2==0)   //For Alternates Of Fixed Positions 94 and 115 
+       // swap_fixed_pos(array);
+    
+}
+
+int check_array(int rand_gen,int *array_random,int size)
+{
+    int flag = 1; 
+    //cout<<"Size = "<<size<<endl;
+    for(int i=1;i<=size;i++)
+    {
+        if(array_random[i]==rand_gen)
+            flag=0;
+    }
+    return flag;
+}
 
 void random_generate(Eigen::VectorXd& array) //Generates A Random Array which obeys all the specifications
 {

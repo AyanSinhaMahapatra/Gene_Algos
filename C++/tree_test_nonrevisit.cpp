@@ -29,6 +29,7 @@ struct treenode
 	int num_arr = 8;
 	int is_debugging_on = 0;
 	int archive_inconsistent = 0;
+	int is_debugging_on = 1;
 
 
 // Helper Functions
@@ -170,6 +171,30 @@ int main()
 
         array = array2;
         check_inconsistencies(archive);
+
+    	if(is_okay(array)==0)
+    		return 0;
+    	shake(array,array2,1);
+    	array = array2;
+    	
+     	if(is_present(archive,array))
+        {
+        	cout<<"Shaked array present"<<endl;
+        	cout<<"Shaked Array == "<<endl;
+    		for(int j=1;j<=115;j++)
+            	cout<<array2(j);
+        	cout<<endl;
+            find_open_insert_prune(archive,array);
+        }
+        else
+        {
+        	//cout<<"Shaked array not present"<<endl;
+        	//cout<<"Shaked Array == "<<endl;
+    		//for(int j=1;j<=115;j++)
+            	//cout<<array2(j);
+        	//cout<<endl;	
+            insert_array_and_prune(archive,array);
+        }
 
     	if(is_present(archive,array)==0)
     	{	

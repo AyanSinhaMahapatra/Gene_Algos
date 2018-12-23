@@ -27,7 +27,6 @@ struct treenode
 	long long int pop_counter = 0;
 	double rand_find_thr = 0.5;
 	int num_arr = 8;
-	int is_debugging_on = 0;
 	int archive_inconsistent = 0;
 	int is_debugging_on = 1;
 
@@ -229,6 +228,7 @@ struct treenode* newNode(int data,int is_this) // Done
 
 void check_inconsistencies(struct treenode *root)
 {
+	
 	check_rec(root,0,2);
 }
 

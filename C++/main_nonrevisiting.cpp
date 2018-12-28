@@ -56,10 +56,8 @@ struct treenode* newNode(int data,int is_this);
 void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array);
 string change_ds(Eigen::VectorXd& array);
 int is_present(struct treenode *root,Eigen::VectorXd& array);  // 1 - present , 0 - not present
-void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array);
 void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array);
-void delete_array(struct treenode *root,Eigen::VectorXd& array); 
 long long int population(struct treenode *root); // How many arrays are stored here
 void delete_tree(struct treenode *root);
 void pop_rec(struct treenode *temp);
@@ -817,6 +815,68 @@ struct treenode* newNode(int data,int is_this) // Done
   return(newnode);
 }
 
+void check_inconsistencies(struct treenode *root)
+{
+
+    check_rec(root,0,2);
+}
+
+void check_rec(struct treenode *temp,int level, int what_is_this)
+{
+    int continue_no = 0;
+
+    if(temp == NULL)
+        return;
+
+    if(temp->status == 1)
+    {
+        if(temp->left!=NULL || temp->right!=NULL)
+            continue_no = 1;
+    }
+
+    if(temp->status == 0)
+    {
+        if(temp->left==NULL && temp->right==NULL && temp->data != 115)
+            continue_no = 1;
+
+        if(temp->left!=NULL && temp->right!=NULL)
+        {
+            if(temp->left->status == 1 && temp->right->status == 1)
+                continue_no = 1;
+        }
+    }
+
+    if(temp->left!= NULL)
+    {
+        if(temp->left->parent != temp)
+            continue_no = 1;
+    }
+
+    if(temp->right!=NULL)
+    {
+        if(temp->right->parent != temp)
+            continue_no = 1;
+    }   
+
+    if(temp->data != level)
+        continue_no = 1;
+
+    if(temp->is_this != what_is_this)
+        continue_no = 1;
+
+    if(continue_no == 0)
+    {
+        check_rec(temp->left,level+1,0);
+        check_rec(temp->right,level+1,1);
+    }
+    else
+    {
+        cout<<"Archive Inconsistent Fuck!!!! "<<endl;
+        archive_inconsistent = 1;
+    }
+
+}
+
 void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array) //Done
 {
     if(root == NULL)
@@ -891,7 +951,6 @@ void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array) //Done
     temp->left = NULL;
     temp->right = NULL;
     
-
     del_rec(left);
     del_rec(right);
 
@@ -1013,17 +1072,58 @@ int is_present(struct treenode *root,Eigen::VectorXd& array) // Done
     return flag;
 }
 
+void check_and_amend_count(int temp_data,int prev_zeroes,int prev_ones,int prev_is_94_1,Eigen::VectorXd& prev_array)
+{
+    int no_of_zeros = 0;
+    int no_of_ones = 0;
+    int is_94_1 = 2;
+    int temp_int;
+    
+    //Initializing the ones/zeroes counters at start
+    for(int c = 2;c <= temp_data;c++)
+    {
+        temp_int = prev_array(c);
+
+        if(c == 94)
+        {
+            if( temp_int == 0 )
+                is_94_1 = 0;
+            else
+                is_94_1 = 1;
+        }
+        else if( temp_int == 0 )
+            no_of_zeros++;
+        else
+            no_of_ones++;
+    }
+
+    if(no_of_ones!=prev_ones || no_of_zeros!=prev_zeroes || is_94_1!=prev_is_94_1)
+    {
+        cout<<"Count not okay Changing Count "<<endl;
+        cout<<"In function == "<<endl;
+        cout<<prev_ones<<" "<<prev_zeroes<<" "<<prev_is_94_1<<endl;
+        cout<<"In check function == "<<endl;
+        cout<<no_of_ones<<" "<<no_of_zeros<<" "<<is_94_1<<endl;
+
+        no_of_ones=prev_ones;
+        no_of_zeros=prev_zeroes; 
+        is_94_1=prev_is_94_1;
+    }
+    else 
+    {
+        if(is_debugging_on == 1)
+            cout<<"Counts Okay Check Done"<<endl;
+    }
+
+    return;
+}
+
 void find_open_insert_prune(struct treenode *root,Eigen::VectorXd& array)
 {
-    if(is_okay(array)==0)
-        cout<<"Error Input Array at find_open_okay is not okay"<<endl;
     Eigen::VectorXd new_array(116);
     find_open_okay(root,array,new_array);
     if(is_okay(new_array)==0)
         cout<<"Error Array by find_open_okay is not okay"<<endl;
-    if(is_present(root,array)==0)
-        cout<<"Error Array not Present "<<endl;
-
     insert_array_and_prune(root,new_array);
     array = new_array;
     return;
@@ -1037,7 +1137,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
         return;
     }
 
-    //cout<<"Function Starts"<<endl;
+    if(is_debugging_on == 1)
+        cout<<"Function Starts"<<endl;
 
     struct treenode *temp;
     struct treenode *temp_check;
@@ -1058,15 +1159,20 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
             temp = temp -> right;
     }
 
+    // Going to place till where Array matches, steps back 1 step from where find starts
     new_array = array;
     temp = temp -> parent;
     double rand_find = 0;   
+
+    if(is_debugging_on == 1)
+        cout<<"Status 1 Discovered at Below -> "<<temp->data<<endl;
 
     int no_of_zeros = 0;
     int no_of_ones = 0;
     int is_94_1 = 2;
     int backtrack_needed = 0;
     
+    //Initializing the ones/zeroes counters at start
     for(int c = 2;c <= temp-> data;c++)
     {
         temp_int = new_array(c);
@@ -1090,7 +1196,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
         return;
     }
 
-    //cout<<"While Loop In Function Starts"<<endl;
+    if(is_debugging_on == 1)
+        cout<<"While Loop In Function Starts"<<endl;
 
     while(is_not_found)
     {
@@ -1121,12 +1228,21 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
         }
         else if(temp->data == 114) // opposite of 94 at 115
         {
-            //cout<<"114 statement Starts"<<endl;
+            if(is_debugging_on == 1)
+                cout<<"114 statement Starts"<<endl;
 
             if(temp->status == 1)
+            {   
                 backtrack_needed = 1;
+
+                if(is_debugging_on == 1)
+                    cout<<"114 statement status = 1 at first"<<endl;
+            }
             else if( is_94_1 == 1 )
             {
+                if(is_debugging_on == 1)
+                    cout<<"114 statement is_94_1 = 1 at first"<<endl;
+
                 if(temp->left != NULL && temp->left->status == 1)
                 {   
                     backtrack_needed = 1;
@@ -1151,6 +1267,9 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
             }
             else if( is_94_1 == 0 )
             {
+                if(is_debugging_on == 1)
+                    cout<<"114 statement is_94_1 = 0 at first"<<endl;
+
                 if( temp->right != NULL && temp->right->status == 1)
                 {   
                     backtrack_needed = 1;
@@ -1176,21 +1295,37 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
             else if( is_94_1 == 2 )
             {   
                 cout<<" Error is_94_1 is 2 "<<endl;
+                archive_inconsistent = 1;
                 return;
             }
 
+            // ToDo possible breach in counting
             if(temp->data == 115)
                 temp = temp->parent;
+
             if(temp->is_this == 1)
             {
                 while(temp->is_this != 0)
+                {   
+                    if(temp->data!=94)
+                        no_of_ones--;
                     temp = temp->parent;
+                }
             }
             else if(temp->is_this == 0)
             {
                 while(temp->is_this != 1)
+                {
+                    if(temp->data!=94)
+                        no_of_zeros--;
                     temp = temp->parent;
+                }
             }
+
+            //check_and_amend_count(temp->data,no_of_zeros,no_of_ones,is_94_1,new_array);
+
+            if(is_debugging_on == 1)
+                cout<<"114 statement at last deleting from -> "<<temp->data<<endl;
 
             temp->status = 1;
 
@@ -1207,12 +1342,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
             if( temp->right != NULL )
                 del_rec(right);
 
-            //cout<<"114 Statement ends"<<endl;
+            if(is_debugging_on == 1)
+                cout<<"114 Statement ends"<<endl;
 
         }
         else if(no_of_zeros==56||no_of_ones==56) // Only one possibility of Okay Array
         {
-            //cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
+            if(is_debugging_on == 1)
+                cout<<"0/1 56 statement starts at  "<<temp->data<<endl;
 
             int is_only_okay_present = 0;
 
@@ -1263,7 +1400,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
             if(is_only_okay_present == 0)
             {
-                //cout<<"only okay is not present "<<endl;
+                if(is_debugging_on == 1)
+                    cout<<"only okay is not present "<<endl;
 
                 temp = temp_check;
 
@@ -1303,7 +1441,8 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
             }
             else
             {   
-                //cout<<"Only okay is present go back"<<endl;
+                if(is_debugging_on == 1)
+                    cout<<"Only okay is present go back"<<endl;
 
                 backtrack_needed = 1;
                 temp = temp_check;
@@ -1325,12 +1464,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
                     del_rec(right);
             }
 
-            //cout<<"0/1 56 statement ends"<<endl;
+            if(is_debugging_on == 1)
+                cout<<"0/1 56 statement ends"<<endl;
 
         }
         else if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
         {   
-            //cout<<"Normal statement starts "<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Normal statement starts "<<endl;
 
             if(temp->left != NULL && temp->left->status == 1)
             {
@@ -1361,11 +1502,13 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
                     no_of_zeros++;
             }
 
-            //cout<<"Normal statement ends "<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Normal statement ends "<<endl;
         }
         else
         {
-            //cout<<"Normal random statement starts "<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Normal random statement starts "<<endl;
 
             rand_find = rand() / (double)RAND_MAX;
 
@@ -1398,12 +1541,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
                     no_of_ones++;
             }
 
-            //cout<<"Normal random statement ends "<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Normal random statement ends "<<endl;
         }
 
         if(backtrack_needed == 1)
         {
-            //cout<<"Backtrack starts "<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Backtrack starts "<<endl;
 
             bool rec_flag = 1;
 
@@ -1443,6 +1588,7 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
                 return;
             }
 
+            // Deleting the Backtracked Path (One below current temp position)
             struct treenode *temp_delete;
             temp_delete = temp;
 
@@ -1466,21 +1612,14 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 
             backtrack_needed = 0;
 
-            //cout<<"Backtrack ends"<<endl;
+            if(is_debugging_on == 1)
+                cout<<"Backtrack ends"<<endl;
         }
 
-        /*
-        if(check_number_01(root,temp,no_of_zeros,no_of_ones,new_array) == 0)
-        {
-            cout<<"Error No of Zeroes/Ones not matching "<<endl;
-        }
-        else
-        {
-            cout<<"0/1 matching at last "<<endl;
-        }*/
     }
 
-    //cout<<"Function ends"<<endl;
+    if(is_debugging_on == 1)
+        cout<<"Function ends"<<endl;
 
     return;
 }
@@ -1523,95 +1662,6 @@ int check_number_01(struct treenode *root,struct treenode *temp,int no_of_zeros,
 
     return is_okay;
 }
-
-void find_open(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd& new_array)
-{
-    if(root == NULL)
-    {
-        cout<<"Tree Empty"<<endl;
-        return;
-    }
-
-    struct treenode *temp;
-    temp = root;
-    int temp_int;
-
-    for(int i=1; i<=115; i++)
-    {
-        if(temp->status == 1)
-            break;
-
-        temp_int = array(i);
-
-        if(temp_int == 0)
-            temp = temp -> left;
-        else if(temp_int == 1)
-            temp = temp -> right;
-    }
-
-    new_array = array;
-    temp = temp -> parent;
-    double rand_find = 0;
-
-    if(temp->left != NULL && temp->left->status == 1)
-    {
-        if(temp->right == NULL)
-            temp->right = newNode(temp->data + 1,1);
-        temp = temp -> right;
-        new_array(temp->data) = 1;
-    }
-    else
-    {
-        if(temp->left == NULL)
-            temp->left = newNode(temp->data + 1,0);
-        temp = temp -> left;
-        new_array(temp->data) = 0;
-    }   
-
-    while(temp->data != 115)
-    {
-        if((temp->left != NULL && temp->left->status == 1) || (temp->right != NULL && temp->right->status == 1))
-        {   
-            if(temp->left != NULL && temp->left->status == 1)
-            {
-                if( temp->right == NULL)
-                    temp->right = newNode(temp->data+1,1);
-                temp = temp->right;
-                new_array(temp->data) = 1;
-            }
-            else 
-            {
-                if( temp->left == NULL)
-                    temp->left = newNode(temp->data+1,0);
-                temp = temp->left;
-                new_array(temp->data) = 0;
-            }
-        }
-        else
-        {
-            rand_find = rand() / (double)RAND_MAX;
-
-            if(rand_find < rand_find_thr)   //Left
-            {
-                if( temp->left == NULL)
-                    temp->left = newNode(temp->data+1,0);
-                temp = temp->left;
-                new_array(temp->data) = 0;
-            }
-            else //Right
-            {
-                if( temp->right == NULL)
-                    temp->right = newNode(temp->data+1,1);
-                temp = temp->right;
-                new_array(temp->data) = 1;
-            }
-        }
-    }
-
-    if(temp->data != 115)
-        cout<<"Problem in Open_FIND while loop"<<endl;
-}
-
 
 void delete_tree(struct treenode* root) //Done
 {
@@ -1663,7 +1713,7 @@ void pop_rec(struct treenode *temp) //Done
     {
         pop_counter += pow(2,(115 - temp->data));
         //if(temp->data != 115)
-            cout<<"Pop Data = "<<temp->data<<endl;
+            //cout<<"Pop Data = "<<temp->data<<endl;
         return;
     }
     else
@@ -1671,4 +1721,15 @@ void pop_rec(struct treenode *temp) //Done
         pop_rec(temp->left);
         pop_rec(temp->right);
     }
+}
+
+string change_ds(Eigen::VectorXd& array)
+{
+    string str;
+    for(int i=1;i<116;i++){
+        if(array(i) == 1)
+            str.push_back('1');
+        else  str.push_back('0');
+    }
+    return str;
 }

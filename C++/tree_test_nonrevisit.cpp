@@ -28,7 +28,7 @@ struct treenode
 	double rand_find_thr = 0.5;
 	int num_arr = 8;
 	int archive_inconsistent = 0;
-	int is_debugging_on = 1;
+	int is_debugging_on = 0;
 
 
 // Helper Functions
@@ -228,7 +228,7 @@ struct treenode* newNode(int data,int is_this) // Done
 
 void check_inconsistencies(struct treenode *root)
 {
-	
+
 	check_rec(root,0,2);
 }
 
@@ -362,7 +362,6 @@ void insert_array_and_prune(struct treenode *root,Eigen::VectorXd& array) //Done
 	temp->left = NULL;
 	temp->right = NULL;
 	
-
 	del_rec(left);
 	del_rec(right);
 
@@ -714,12 +713,13 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 			// ToDo possible breach in counting
 			if(temp->data == 115)
 				temp = temp->parent;
+
 			if(temp->is_this == 1)
 			{
 				while(temp->is_this != 0)
 				{	
 					if(temp->data!=94)
-						no_of_zeros--;
+						no_of_ones--;
 					temp = temp->parent;
 				}
 			}
@@ -728,7 +728,7 @@ void find_open_okay(struct treenode *root,Eigen::VectorXd& array,Eigen::VectorXd
 				while(temp->is_this != 1)
 				{
 					if(temp->data!=94)
-						no_of_ones--;
+						no_of_zeros--;
 					temp = temp->parent;
 				}
 			}
